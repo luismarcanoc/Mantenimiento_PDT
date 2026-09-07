@@ -97,6 +97,8 @@ function crearReporte(data) {
   const payload = validarReporte_(data || {});
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
+  let savedRecord = null;
+  let result = null;
 
   try {
     const database = abrirBaseDatos_();
@@ -139,6 +141,7 @@ function crearReporte(data) {
       ESTATUS_LEGACY: '',
       PROGRESO: 0,
       ENCARGADO: '',
+      RESUELTO_POR: '',
       CREADO_EN: now,
       ACTUALIZADO_EN: now
     };
@@ -156,7 +159,8 @@ function crearReporte(data) {
     });
 
     SpreadsheetApp.flush();
-    return {
+    savedRecord = record;
+    result = {
       ok: true,
       idReporte: reportId,
       numeroReporte: reportNumber,
@@ -165,6 +169,15 @@ function crearReporte(data) {
   } finally {
     lock.releaseLock();
   }
+
+  try {
+    enviarNuevoReporteTelegram_(savedRecord);
+  } catch (error) {
+    console.error('El reporte se guardo, pero Telegram no pudo notificarse: ' +
+      obtenerMensajeErrorTelegram_(error));
+  }
+
+  return result;
 }
 
 function validarReporte_(data) {

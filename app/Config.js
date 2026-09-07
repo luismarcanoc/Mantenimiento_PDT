@@ -1,5 +1,5 @@
 const APP_CONFIG = Object.freeze({
-  VERSION: '0.2.0',
+  VERSION: '0.3.0',
   TIME_ZONE: 'America/Caracas',
   ASSET_BASE_URL: 'https://produccionpdt.com',
   SPREADSHEET_ID: '1LuPBr--e14q2Kyf_KBydut9HIBffPpZa5Ua_aD1nrN0',
@@ -68,6 +68,7 @@ const SHEET_SCHEMAS = Object.freeze({
     'ESTATUS_LEGACY',
     'PROGRESO',
     'ENCARGADO',
+    'RESUELTO_POR',
     'TIPO_TRABAJO_LEGACY',
     'NUMERO_CASO_LEGACY',
     'TIEMPO_ATENCION',
@@ -105,6 +106,16 @@ const SHEET_SCHEMAS = Object.freeze({
     'ULTIMO_ERROR',
     'ENVIADO_EN',
     'RESPONDIDO_EN',
+    'ACTUALIZADO_EN'
+  ],
+  REPORTE_PARTICIPANTES: [
+    'ID_PARTICIPACION',
+    'ID_REPORTE',
+    'TELEGRAM_USER_ID',
+    'NOMBRE',
+    'USUARIO',
+    'ACTIVO',
+    'AGREGADO_EN',
     'ACTUALIZADO_EN'
   ],
   USUARIOS: [
