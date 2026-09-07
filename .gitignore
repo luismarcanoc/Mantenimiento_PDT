@@ -1,0 +1,13 @@
+# Credenciales y configuracion local de clasp
+**/.clasprc.json
+**/.clasp.json
+
+# Copias del sistema anterior: contienen configuracion sensible.
+/referencias/
+
+# Dependencias y archivos locales
+node_modules/
+.env
+.env.*
+*.log
+

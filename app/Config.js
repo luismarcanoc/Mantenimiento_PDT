@@ -1,0 +1,131 @@
+const APP_CONFIG = Object.freeze({
+  VERSION: '0.1.0',
+  TIME_ZONE: 'America/Caracas',
+  SPREADSHEET_ID: '1LuPBr--e14q2Kyf_KBydut9HIBffPpZa5Ua_aD1nrN0',
+  LEGACY_SPREADSHEET_ID: '1fxeX_XrGiLV0HGCIDvXI0SmLtGK5TQ4EB_Ap5Fc4QCs',
+  LEGACY_QR_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSeQIjapvPzRB9FnTT0L5Sr4QKfJ4puKHIWWAr-PUD2y8vh5dw/viewform'
+});
+
+const SHEET_SCHEMAS = Object.freeze({
+  EQUIPOS: [
+    'ID_EQUIPO',
+    'CODIGO_EQUIPO',
+    'TIPO_EQUIPO',
+    'NOMBRE_ORIGINAL',
+    'NOMBRE',
+    'MARCA',
+    'MODELO',
+    'INFORMACION',
+    'EMPRESA',
+    'UBICACION',
+    'AREA',
+    'ESTATUS',
+    'CODIGO_ANTERIOR',
+    'IMAGEN_URL',
+    'QR_LEGACY_URL',
+    'ACTIVO',
+    'CREADO_EN',
+    'ACTUALIZADO_EN'
+  ],
+  ACTIVIDADES: [
+    'ID_ACTIVIDAD',
+    'CODIGO_ACTIVIDAD',
+    'CODIGO_EQUIPO',
+    'DESCRIPCION',
+    'PERSONAL_REQUERIDO',
+    'FRECUENCIA',
+    'MATERIALES',
+    'HERRAMIENTAS',
+    'COSTO_ESTIMADO',
+    'ULTIMA_EJECUCION',
+    'PROXIMA_EJECUCION',
+    'INFORMACION',
+    'ESTATUS',
+    'ACTIVO',
+    'CREADO_EN',
+    'ACTUALIZADO_EN'
+  ],
+  REPORTES: [
+    'ID_REPORTE',
+    'NUMERO_REPORTE_LEGACY',
+    'ORIGEN',
+    'TIPO_REPORTE',
+    'PERSONA_REPORTA',
+    'CORREO_REPORTA',
+    'CODIGO_EQUIPO',
+    'NOMBRE_EQUIPO',
+    'EMPRESA',
+    'UBICACION',
+    'AREA',
+    'DESCRIPCION',
+    'EQUIPO_DETENIDO',
+    'EVIDENCIA_URL',
+    'PRIORIDAD',
+    'ESTATUS',
+    'PROGRESO',
+    'ENCARGADO',
+    'CREADO_EN',
+    'ATENDIDO_EN',
+    'RESUELTO_EN',
+    'ACTUALIZADO_EN'
+  ],
+  HISTORIAL_REPORTES: [
+    'ID_HISTORIAL',
+    'ID_REPORTE',
+    'ACCION',
+    'ESTATUS_ANTERIOR',
+    'ESTATUS_NUEVO',
+    'COMENTARIO',
+    'REALIZADO_POR',
+    'FECHA_HORA'
+  ],
+  TELEGRAM_LOG: [
+    'ID_LOG',
+    'ID_REPORTE',
+    'CHAT_ID',
+    'MESSAGE_ID',
+    'TIPO_MENSAJE',
+    'ESTATUS',
+    'INTENTOS',
+    'ULTIMO_ERROR',
+    'ENVIADO_EN',
+    'RESPONDIDO_EN',
+    'ACTUALIZADO_EN'
+  ],
+  USUARIOS: [
+    'ID_USUARIO',
+    'CORREO',
+    'NOMBRE',
+    'APELLIDO',
+    'ROL',
+    'DEPARTAMENTO',
+    'TELEGRAM_USER_ID',
+    'ACTIVO',
+    'CREADO_EN',
+    'ACTUALIZADO_EN'
+  ],
+  CATALOGOS: [
+    'TIPO',
+    'CODIGO',
+    'NOMBRE',
+    'ORDEN',
+    'ACTIVO'
+  ],
+  CONFIGURACION: [
+    'CLAVE',
+    'VALOR',
+    'DESCRIPCION',
+    'ACTUALIZADO_EN'
+  ],
+  MIGRACION_LOG: [
+    'ID_MIGRACION',
+    'TIPO',
+    'ORIGEN',
+    'REGISTROS_LEIDOS',
+    'REGISTROS_CREADOS',
+    'REGISTROS_OMITIDOS',
+    'ERRORES',
+    'FECHA_HORA'
+  ]
+});
+
