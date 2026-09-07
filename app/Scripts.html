@@ -1,0 +1,274 @@
+<script>
+  (function() {
+    'use strict';
+
+    const state = {
+      selectedEquipment: null,
+      manual: false,
+      searchTimer: null,
+      submitting: false
+    };
+
+    const elements = {
+      form: document.getElementById('report-form'),
+      equipmentControls: document.getElementById('equipment-controls'),
+      location: document.getElementById('location-select'),
+      searchWrap: document.getElementById('equipment-search-wrap'),
+      search: document.getElementById('equipment-search'),
+      searchStatus: document.getElementById('search-status'),
+      results: document.getElementById('equipment-results'),
+      selected: document.getElementById('selected-equipment'),
+      selectedCode: document.getElementById('selected-code'),
+      selectedName: document.getElementById('selected-name'),
+      selectedLocation: document.getElementById('selected-location'),
+      selectedArea: document.getElementById('selected-area'),
+      changeEquipment: document.getElementById('change-equipment'),
+      manualToggle: document.getElementById('manual-toggle'),
+      manualFields: document.getElementById('manual-fields'),
+      message: document.getElementById('form-message'),
+      submit: document.getElementById('submit-button'),
+      success: document.getElementById('success-view'),
+      successMessage: document.getElementById('success-message'),
+      newReport: document.getElementById('new-report')
+    };
+
+    function callServer(functionName) {
+      const args = Array.prototype.slice.call(arguments, 1);
+      return new Promise(function(resolve, reject) {
+        const runner = google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(function(error) {
+            reject(new Error(error && error.message ? error.message : String(error)));
+          });
+        runner[functionName].apply(runner, args);
+      });
+    }
+
+    function escapeHtml(value) {
+      const node = document.createElement('span');
+      node.textContent = value || '';
+      return node.innerHTML;
+    }
+
+    function equipmentLocation(equipment) {
+      return [equipment.empresa, equipment.ubicacion, equipment.area].filter(Boolean).join(' · ');
+    }
+
+    function setLocationValue(location) {
+      const expected = String(location || '');
+      const option = Array.from(elements.location.options).find(function(item) {
+        return item.value === expected;
+      });
+      if (option) elements.location.value = option.value;
+    }
+
+    function renderResults(results) {
+      elements.results.innerHTML = '';
+      if (!results.length) {
+        elements.searchStatus.textContent = 'No se encontraron equipos.';
+        elements.results.hidden = true;
+        return;
+      }
+      elements.searchStatus.textContent = results.length + ' resultado(s).';
+      elements.results.innerHTML = results.map(function(equipment) {
+        return '<button class="result-button" type="button" data-code="' + escapeHtml(equipment.codigo) + '">' +
+          '<strong>' + escapeHtml(equipment.nombre || 'Equipo sin nombre') + '</strong>' +
+          '<span>' + escapeHtml(equipment.codigo) + '</span>' +
+          '<small>Área: ' + escapeHtml(equipment.area || 'Sin área registrada') + '</small>' +
+          '</button>';
+      }).join('');
+      elements.results.hidden = false;
+    }
+
+    async function searchEquipment() {
+      const query = elements.search.value.trim();
+      const location = elements.location.value;
+      if (!location) {
+        elements.searchStatus.textContent = 'Selecciona primero una ubicación.';
+        return;
+      }
+      elements.searchStatus.textContent = 'Buscando...';
+      try {
+        renderResults(await callServer('buscarEquiposPorUbicacion', location, query));
+      } catch (error) {
+        elements.searchStatus.textContent = error.message;
+      }
+    }
+
+    function selectEquipment(equipment) {
+      state.selectedEquipment = equipment;
+      state.manual = false;
+      elements.selectedCode.textContent = equipment.codigo;
+      elements.selectedName.textContent = equipment.nombre || 'Equipo sin nombre';
+      elements.selectedLocation.textContent = equipment.ubicacion || 'Sin ubicación registrada';
+      elements.selectedArea.textContent = equipment.area || 'Sin área registrada';
+      setLocationValue(equipment.ubicacion);
+      elements.selected.hidden = false;
+      elements.equipmentControls.hidden = true;
+      elements.results.hidden = true;
+      elements.manualFields.hidden = true;
+      elements.manualToggle.textContent = 'No encuentro el equipo';
+    }
+
+    function clearEquipment() {
+      state.selectedEquipment = null;
+      elements.selected.hidden = true;
+      elements.equipmentControls.hidden = false;
+      elements.searchWrap.hidden = !elements.location.value;
+      elements.search.value = '';
+      elements.searchStatus.textContent = '';
+      if (elements.location.value) {
+        searchEquipment();
+        elements.search.focus();
+      } else {
+        elements.location.focus();
+      }
+    }
+
+    function toggleManual() {
+      state.manual = !state.manual;
+      if (state.manual) {
+        state.selectedEquipment = null;
+        elements.selected.hidden = true;
+        elements.equipmentControls.hidden = true;
+        elements.manualFields.hidden = false;
+        elements.manualToggle.textContent = 'Buscar un equipo registrado';
+        document.getElementById('manual-name').focus();
+      } else {
+        elements.manualFields.hidden = true;
+        elements.equipmentControls.hidden = false;
+        elements.searchWrap.hidden = !elements.location.value;
+        elements.manualToggle.textContent = 'No encuentro el equipo';
+        elements.location.focus();
+      }
+    }
+
+    function readEvidence() {
+      const file = document.getElementById('evidence').files[0];
+      if (!file) return Promise.resolve(null);
+      if (file.size > 8 * 1024 * 1024) {
+        return Promise.reject(new Error('La evidencia no puede superar 8 MB.'));
+      }
+      return new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function() {
+          resolve({
+            name: file.name,
+            mimeType: file.type,
+            base64: String(reader.result).split(',')[1]
+          });
+        };
+        reader.onerror = function() { reject(new Error('No se pudo leer la evidencia.')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function showError(message) {
+      elements.message.textContent = message;
+      elements.message.hidden = false;
+      elements.message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function submitReport(event) {
+      event.preventDefault();
+      if (state.submitting) return;
+      elements.message.hidden = true;
+      state.submitting = true;
+      elements.submit.disabled = true;
+      elements.submit.textContent = 'Enviando...';
+
+      try {
+        const equipmentStopped = document.querySelector('input[name="equipoDetenido"]:checked').value === 'SI';
+        const payload = {
+          tipoReporte: document.querySelector('input[name="tipoReporte"]:checked').value,
+          personaReporta: document.getElementById('reporter').value,
+          correoReporta: document.getElementById('email').value,
+          sinEquipo: state.manual,
+          codigoEquipo: state.selectedEquipment ? state.selectedEquipment.codigo : '',
+          nombreEquipo: document.getElementById('manual-name').value,
+          ubicacion: document.getElementById('manual-location').value,
+          area: document.getElementById('manual-area').value,
+          descripcion: document.getElementById('description').value,
+          equipoDetenido: equipmentStopped,
+          prioridad: document.getElementById('priority').value,
+          evidence: await readEvidence()
+        };
+        const result = await callServer('crearReporte', payload);
+        elements.form.hidden = true;
+        elements.successMessage.textContent = result.mensaje;
+        elements.success.hidden = false;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (error) {
+        showError(error.message || 'No se pudo registrar el reporte.');
+      } finally {
+        state.submitting = false;
+        elements.submit.disabled = false;
+        elements.submit.textContent = 'Enviar reporte';
+      }
+    }
+
+    async function loadInitialEquipment() {
+      const code = String(window.APP_INITIAL_CODE || '').trim();
+      if (!code) return;
+      elements.search.value = code;
+      elements.searchStatus.textContent = 'Identificando equipo...';
+      try {
+        const equipment = await callServer('obtenerEquipoPorCodigo', code);
+        if (equipment) {
+          selectEquipment(equipment);
+        } else {
+          elements.searchStatus.textContent = 'El código del QR no está registrado.';
+        }
+      } catch (error) {
+        elements.searchStatus.textContent = error.message;
+      }
+    }
+
+    async function loadLocations() {
+      elements.location.disabled = true;
+      try {
+        const locations = await callServer('obtenerUbicacionesEquipos');
+        elements.location.innerHTML = '<option value="">Selecciona una ubicación</option>' +
+          locations.map(function(location) {
+            return '<option value="' + escapeHtml(location) + '">' + escapeHtml(location) + '</option>';
+          }).join('');
+      } catch (error) {
+        elements.location.innerHTML = '<option value="">No se pudieron cargar</option>';
+        showError(error.message);
+      } finally {
+        elements.location.disabled = false;
+      }
+    }
+
+    elements.search.addEventListener('input', function() {
+      window.clearTimeout(state.searchTimer);
+      state.searchTimer = window.setTimeout(searchEquipment, 280);
+    });
+    elements.location.addEventListener('change', function() {
+      state.selectedEquipment = null;
+      elements.search.value = '';
+      elements.results.hidden = true;
+      elements.searchWrap.hidden = !elements.location.value;
+      if (elements.location.value) searchEquipment();
+    });
+    elements.results.addEventListener('click', async function(event) {
+      const button = event.target.closest('[data-code]');
+      if (!button) return;
+      elements.searchStatus.textContent = 'Cargando equipo...';
+      try {
+        const equipment = await callServer('obtenerEquipoPorCodigo', button.dataset.code);
+        if (equipment) selectEquipment(equipment);
+      } catch (error) {
+        elements.searchStatus.textContent = error.message;
+      }
+    });
+    elements.changeEquipment.addEventListener('click', clearEquipment);
+    elements.manualToggle.addEventListener('click', toggleManual);
+    elements.form.addEventListener('submit', submitReport);
+    elements.newReport.addEventListener('click', function() {
+      window.location.reload();
+    });
+
+    loadLocations().then(loadInitialEquipment);
+  })();
+</script>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <?!= incluir_('Styles'); ?>
+</head>
+<body>
+  <header class="app-header">
+    <img src="<?= logoUrl ?>" alt="Pan de Tata" class="brand-logo">
+    <div>
+      <p class="eyebrow">Pan de Tata</p>
+      <h1>Reportar incidencia</h1>
+      <p class="subtitle">IT y Mantenimiento</p>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <form id="report-form" novalidate>
+      <section class="form-section" aria-labelledby="type-title">
+        <div class="section-heading">
+          <span class="step">1</span>
+          <div>
+            <h2 id="type-title">Tipo de reporte</h2>
+            <p>Selecciona el equipo que debe atenderlo.</p>
+          </div>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Tipo de reporte">
+          <label>
+            <input type="radio" name="tipoReporte" value="MANTENIMIENTO" checked>
+            <span>Mantenimiento</span>
+          </label>
+          <label>
+            <input type="radio" name="tipoReporte" value="IT">
+            <span>IT</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="equipment-title">
+        <div class="section-heading">
+          <span class="step">2</span>
+          <div>
+            <h2 id="equipment-title">Equipo o elemento</h2>
+            <p>Busca por código, nombre o ubicación.</p>
+          </div>
+        </div>
+
+        <div id="equipment-controls">
+          <label for="location-select">Ubicación</label>
+          <select id="location-select">
+            <option value="">Cargando ubicaciones...</option>
+          </select>
+
+          <div id="equipment-search-wrap" class="equipment-search-wrap" hidden>
+            <label for="equipment-search">Equipo</label>
+            <input id="equipment-search" type="search" autocomplete="off"
+              placeholder="Buscar por nombre, código o área">
+            <div id="search-status" class="field-note" aria-live="polite"></div>
+            <div id="equipment-results" class="search-results" hidden></div>
+          </div>
+        </div>
+
+        <article id="selected-equipment" class="equipment-card" hidden>
+          <div>
+            <span id="selected-code" class="equipment-code"></span>
+            <h3 id="selected-name"></h3>
+            <dl class="equipment-details">
+              <div>
+                <dt>Ubicación</dt>
+                <dd id="selected-location"></dd>
+              </div>
+              <div>
+                <dt>Área</dt>
+                <dd id="selected-area"></dd>
+              </div>
+            </dl>
+          </div>
+          <button type="button" id="change-equipment" class="button-link">Cambiar</button>
+        </article>
+
+        <button type="button" id="manual-toggle" class="button-secondary">
+          No encuentro el equipo
+        </button>
+
+        <div id="manual-fields" class="manual-fields" hidden>
+          <div class="field-grid">
+            <div>
+              <label for="manual-name">Equipo o elemento afectado</label>
+              <input id="manual-name" type="text" maxlength="160" placeholder="Ej. Puerta del almacén">
+            </div>
+            <div>
+              <label for="manual-location">Ubicación</label>
+              <input id="manual-location" type="text" maxlength="160" placeholder="Sede o tienda">
+            </div>
+          </div>
+          <label for="manual-area">Área</label>
+          <input id="manual-area" type="text" maxlength="160" placeholder="Área específica (opcional)">
+        </div>
+      </section>
+
+      <section class="form-section" aria-labelledby="detail-title">
+        <div class="section-heading">
+          <span class="step">3</span>
+          <div>
+            <h2 id="detail-title">Detalles del reporte</h2>
+            <p>Describe claramente lo que está ocurriendo.</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div>
+            <label for="reporter">Nombre de quien reporta</label>
+            <input id="reporter" type="text" maxlength="120" autocomplete="name" required>
+          </div>
+          <div>
+            <label for="email">Correo electrónico <span>(opcional)</span></label>
+            <input id="email" type="email" maxlength="160" autocomplete="email">
+          </div>
+        </div>
+
+        <label for="description">Descripción de la incidencia</label>
+        <textarea id="description" rows="5" maxlength="2000" required
+          placeholder="Indica qué ocurrió, desde cuándo y cualquier detalle útil."></textarea>
+
+        <div class="field-grid">
+          <fieldset>
+            <legend>¿El equipo está detenido?</legend>
+            <div class="segmented segmented-small">
+              <label>
+                <input type="radio" name="equipoDetenido" value="NO" checked>
+                <span>No</span>
+              </label>
+              <label>
+                <input type="radio" name="equipoDetenido" value="SI">
+                <span>Sí</span>
+              </label>
+            </div>
+          </fieldset>
+          <div>
+            <label for="priority">Prioridad</label>
+            <select id="priority">
+              <option value="BAJA">Baja</option>
+              <option value="MEDIA" selected>Media</option>
+              <option value="ALTA">Alta</option>
+              <option value="CRITICA">Crítica</option>
+            </select>
+          </div>
+        </div>
+
+        <label for="evidence">Foto o video <span>(opcional, máximo 8 MB)</span></label>
+        <input id="evidence" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime">
+      </section>
+
+      <div id="form-message" class="form-message" aria-live="polite" hidden></div>
+      <button id="submit-button" type="submit" class="button-primary">Enviar reporte</button>
+    </form>
+
+    <section id="success-view" class="success-view" hidden>
+      <span class="success-mark">Listo</span>
+      <h2 id="success-title">Reporte registrado</h2>
+      <p id="success-message"></p>
+      <button id="new-report" type="button" class="button-primary">Crear otro reporte</button>
+    </section>
+  </main>
+
+  <script>
+    window.APP_INITIAL_CODE = <?!= JSON.stringify(initialCode) ?>;
+  </script>
+  <?!= incluir_('Scripts'); ?>
+</body>
+</html>

@@ -1,6 +1,7 @@
 const APP_CONFIG = Object.freeze({
   VERSION: '0.2.0',
   TIME_ZONE: 'America/Caracas',
+  ASSET_BASE_URL: 'https://produccionpdt.com',
   SPREADSHEET_ID: '1LuPBr--e14q2Kyf_KBydut9HIBffPpZa5Ua_aD1nrN0',
   LEGACY_SPREADSHEET_ID: '1fxeX_XrGiLV0HGCIDvXI0SmLtGK5TQ4EB_Ap5Fc4QCs',
   LEGACY_QR_FORM_URL: 'https://docs.google.com/forms/d/e/1FAIpQLSeQIjapvPzRB9FnTT0L5Sr4QKfJ4puKHIWWAr-PUD2y8vh5dw/viewform'
@@ -47,6 +48,7 @@ const SHEET_SCHEMAS = Object.freeze({
   ],
   REPORTES: [
     'ID_REPORTE',
+    'NUMERO_REPORTE',
     'NUMERO_REPORTE_LEGACY',
     'ORIGEN',
     'TIPO_REPORTE',
