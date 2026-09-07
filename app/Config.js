@@ -1,5 +1,5 @@
 const APP_CONFIG = Object.freeze({
-  VERSION: '0.1.0',
+  VERSION: '0.1.1',
   TIME_ZONE: 'America/Caracas',
   SPREADSHEET_ID: '1LuPBr--e14q2Kyf_KBydut9HIBffPpZa5Ua_aD1nrN0',
   LEGACY_SPREADSHEET_ID: '1fxeX_XrGiLV0HGCIDvXI0SmLtGK5TQ4EB_Ap5Fc4QCs',
@@ -128,4 +128,3 @@ const SHEET_SCHEMAS = Object.freeze({
     'FECHA_HORA'
   ]
 });
-

@@ -17,6 +17,13 @@ function configurarBaseDeDatos() {
     cargarConfiguracionInicial_();
     cargarCatalogosIniciales_();
     eliminarHojaInicialVacia_(spreadsheet);
+    SpreadsheetApp.flush();
+
+    spreadsheet.toast(
+      'Estructura creada correctamente en "' + spreadsheet.getName() + '".',
+      'Mantenimiento PDT',
+      8
+    );
 
     const resultado = obtenerEstadoInstalacion();
     console.log(JSON.stringify(resultado));
@@ -149,4 +156,3 @@ function obtenerEstadoInstalacion() {
     })
   };
 }
-

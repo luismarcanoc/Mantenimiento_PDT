@@ -1,5 +1,8 @@
 function abrirBaseDatos_() {
-  return SpreadsheetApp.openById(APP_CONFIG.SPREADSHEET_ID);
+  // En ejecuciones manuales usa primero el Sheet al que pertenece el script.
+  // En una web app no hay archivo activo, por eso se conserva el ID como respaldo.
+  return SpreadsheetApp.getActiveSpreadsheet() ||
+    SpreadsheetApp.openById(APP_CONFIG.SPREADSHEET_ID);
 }
 
 function obtenerHoja_(nombre) {
@@ -23,4 +26,3 @@ function normalizarEncabezado_(valor) {
 function crearId_(prefijo) {
   return prefijo + '-' + Utilities.getUuid();
 }
-
