@@ -119,8 +119,11 @@ function leerTablaLegacy_(spreadsheet, sheetName) {
     throw new Error('La hoja anterior esta vacia: ' + sheetName);
   }
 
-  const values = sheet.getDataRange().getValues();
+  const dataRange = sheet.getDataRange();
+  const values = dataRange.getValues();
+  const formulas = dataRange.getFormulas();
   const headers = values.shift();
+  formulas.shift();
   const indexes = {};
   headers.forEach(function(header, index) {
     const key = normalizarEncabezado_(header);
@@ -134,7 +137,8 @@ function leerTablaLegacy_(spreadsheet, sheetName) {
     sheetName: sheetName,
     headers: headers,
     indexes: indexes,
-    rows: values
+    rows: values,
+    formulas: formulas
   };
 }
 
@@ -295,6 +299,10 @@ function upsertRegistros_(sheetName, records, keyFields, idField, idPrefix) {
   });
 
   if (existing.length > 0) {
+    const requiredRows = existing.length + 1;
+    if (sheet.getMaxRows() < requiredRows) {
+      sheet.insertRowsAfter(sheet.getMaxRows(), requiredRows - sheet.getMaxRows());
+    }
     sheet.getRange(2, 1, existing.length, headers.length).setValues(existing);
   }
   return { created: created, updated: updated, total: records.length };
@@ -331,4 +339,3 @@ function texto_(value) {
 function tieneTexto_(value) {
   return texto_(value) !== '';
 }
-

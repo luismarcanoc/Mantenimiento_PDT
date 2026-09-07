@@ -50,6 +50,13 @@ function asegurarHoja_(spreadsheet, sheetName, requiredHeaders) {
 
   if (missingHeaders.length > 0) {
     const startColumn = currentHeaders.length + 1;
+    const requiredColumns = startColumn + missingHeaders.length - 1;
+    if (sheet.getMaxColumns() < requiredColumns) {
+      sheet.insertColumnsAfter(
+        sheet.getMaxColumns(),
+        requiredColumns - sheet.getMaxColumns()
+      );
+    }
     sheet.getRange(1, startColumn, 1, missingHeaders.length)
       .setValues([missingHeaders]);
   }
