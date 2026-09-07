@@ -4,10 +4,10 @@
 
 # Copias del sistema anterior: contienen configuracion sensible.
 /referencias/
+/revision-script-*/
 
 # Dependencias y archivos locales
 node_modules/
 .env
 .env.*
 *.log
-
