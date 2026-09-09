@@ -777,8 +777,9 @@ function obtenerMensajeErrorTelegram_(error) {
 }
 
 /**
- * Busca el grupo despues de enviar /activar dentro de el y guarda su chat ID.
- * Nunca devuelve ni registra el token.
+ * Busca el grupo donde se envio el comando de activacion mas reciente, guarda su
+ * chat ID y confirma la conexion dentro del propio grupo. Nunca devuelve ni
+ * registra el token.
  */
 function detectarYGuardarGrupoTelegram() {
   const properties = PropertiesService.getScriptProperties();
@@ -793,26 +794,40 @@ function detectarYGuardarGrupoTelegram() {
     timeout: 0,
     allowed_updates: ['message']
   }, token);
-  const groups = {};
+  let selected = null;
   updates.forEach(function(update) {
     const chat = update.message && update.message.chat;
-    if (chat && ['group', 'supergroup'].indexOf(chat.type) !== -1) {
-      groups[String(chat.id)] = texto_(chat.title);
+    const text = texto_(update.message && update.message.text);
+    if (chat && ['group', 'supergroup'].indexOf(chat.type) !== -1 &&
+        esComandoActivacionTelegram_(text)) {
+      selected = {
+        id: String(chat.id),
+        title: texto_(chat.title),
+        updateId: Number(update.update_id)
+      };
     }
   });
-  const matches = Object.keys(groups).filter(function(chatId) {
-    return normalizarClave_(groups[chatId]) ===
-      normalizarClave_('Reportes de mantenimiento');
-  });
-  if (matches.length !== 1) {
+  if (!selected) {
     throw new Error(
-      matches.length === 0 ?
-        'No se encontro el grupo. Envia /activar dentro de Reportes de mantenimiento e intenta otra vez.' :
-        'Se encontro mas de un grupo con ese nombre.'
+      'No se encontro un grupo para activar. Envia /activar dentro del grupo de prueba e intenta otra vez.'
     );
   }
-  properties.setProperty(TELEGRAM_CONFIG.CHAT_PROPERTY, matches[0]);
-  return { grupo: groups[matches[0]] };
+  properties.setProperty(TELEGRAM_CONFIG.CHAT_PROPERTY, selected.id);
+  properties.setProperty(
+    TELEGRAM_CONFIG.OFFSET_PROPERTY,
+    String(selected.updateId + 1)
+  );
+  llamarTelegram_('sendMessage', {
+    chat_id: selected.id,
+    text: '✅ Bot conectado con Mantenimiento PDT. Ya puedes crear un reporte de prueba.'
+  }, token);
+  return { grupo: selected.title };
+}
+
+function esComandoActivacionTelegram_(text) {
+  return /^\/?(?:activar|activate|start)(?:@[A-Za-z0-9_]+)?$/i.test(
+    texto_(text).trim()
+  );
 }
 
 /** Devuelve solamente los nombres visibles del bot y del grupo. */

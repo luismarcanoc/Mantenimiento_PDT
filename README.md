@@ -34,12 +34,13 @@ grupo se guardan unicamente en las propiedades privadas del Apps Script:
 
 Preparacion y prueba:
 
-1. Crear el bot con BotFather, agregarlo al grupo `Reportes de mantenimiento` y
-   darle permiso de administrador para eliminar mensajes.
+1. Crear el bot con BotFather, agregarlo al grupo de reportes o a un grupo de
+   prueba y darle permiso de administrador para eliminar mensajes.
 2. Guardar el token como `TELEGRAM_BOT_TOKEN` en **Configuracion del proyecto >
    Propiedades de la secuencia de comandos**. No escribirlo en el codigo.
 3. Enviar `/activar` dentro del grupo y ejecutar una vez
-   `detectarYGuardarGrupoTelegram` desde el editor de Apps Script.
+   `detectarYGuardarGrupoTelegram` desde el editor de Apps Script. El bot
+   confirmara la conexion en ese grupo, sin depender del nombre que tenga.
 4. Ejecutar `probarConfiguracionTelegram`. El resultado solo muestra el nombre
    del bot y el nombre del grupo.
 5. Ejecutar una vez `instalarIntegracionTelegram` para crear el activador de un
