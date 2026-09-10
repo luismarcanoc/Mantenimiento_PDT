@@ -16,7 +16,7 @@ function enviarNuevoReporteTelegram_(report) {
   try {
     const credentials = obtenerCredencialesTelegram_();
     chatId = credentials.chatId;
-    asegurarEstructuraTelegram_();
+    asegurarEstructuraTelegramSiFalta_();
 
     const response = llamarTelegram_('sendMessage', {
       chat_id: chatId,
@@ -196,7 +196,6 @@ function procesarCallbackTelegram_(callback, credentials) {
 }
 
 function alternarParticipacionTelegram_(reportId, user) {
-  asegurarEstructuraTelegram_();
   const report = buscarReporteTelegram_(reportId);
   if (!report) {
     throw new Error('No se encontro el reporte asociado al mensaje.');
@@ -247,7 +246,6 @@ function alternarParticipacionTelegram_(reportId, user) {
 }
 
 function resolverReporteDesdeTelegram_(reportId, user, chatId, messageId, token) {
-  asegurarEstructuraTelegram_();
   let report = buscarReporteTelegram_(reportId);
   if (!report) {
     throw new Error('No se encontro el reporte asociado al mensaje.');
@@ -447,7 +445,7 @@ function construirBotonesReporteTelegram_(reportId) {
         callback_data: 'participar:' + reportId
       },
       {
-        text: '✅ Marcar como resuelto',
+        text: '✅ Listo',
         callback_data: 'resolver:' + reportId
       }
     ]]
@@ -547,18 +545,32 @@ function sincronizarEncargadosReporteTelegram_(reportId) {
 
 function buscarReporteTelegram_(reportId) {
   const sheet = obtenerHoja_('REPORTES');
-  const table = leerTablaTelegram_(sheet);
-  for (let index = 0; index < table.rows.length; index += 1) {
-    if (String(table.rows[index].ID_REPORTE) === reportId) {
-      return {
-        sheet: sheet,
-        headers: table.headers,
-        rowNumber: index + 2,
-        values: table.rows[index]
-      };
-    }
+  const lastColumn = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastColumn)
+    .getDisplayValues()[0].map(normalizarEncabezado_);
+  const idColumn = headers.indexOf('ID_REPORTE');
+  if (idColumn === -1 || sheet.getLastRow() < 2) {
+    return null;
   }
-  return null;
+  const match = sheet.getRange(2, idColumn + 1, sheet.getLastRow() - 1, 1)
+    .createTextFinder(reportId)
+    .matchEntireCell(true)
+    .findNext();
+  if (!match) {
+    return null;
+  }
+  const rowNumber = match.getRow();
+  const row = sheet.getRange(rowNumber, 1, 1, lastColumn).getValues()[0];
+  const values = {};
+  headers.forEach(function(header, index) {
+    values[header] = row[index];
+  });
+  return {
+    sheet: sheet,
+    headers: headers,
+    rowNumber: rowNumber,
+    values: values
+  };
 }
 
 function buscarLogTelegramPorMensaje_(chatId, messageId) {
@@ -609,12 +621,15 @@ function leerTablaTelegram_(sheet) {
 }
 
 function actualizarFilaTelegram_(sheet, headers, rowNumber, changes) {
+  const range = sheet.getRange(rowNumber, 1, 1, headers.length);
+  const row = range.getValues()[0];
   Object.keys(changes).forEach(function(key) {
     const column = headers.indexOf(normalizarEncabezado_(key));
     if (column !== -1) {
-      sheet.getRange(rowNumber, column + 1).setValue(changes[key]);
+      row[column] = changes[key];
     }
   });
+  range.setValues([row]);
 }
 
 function asegurarEstructuraTelegram_() {
@@ -627,6 +642,22 @@ function asegurarEstructuraTelegram_() {
     'REPORTE_PARTICIPANTES',
     SHEET_SCHEMAS.REPORTE_PARTICIPANTES
   );
+}
+
+function asegurarEstructuraTelegramSiFalta_() {
+  const database = abrirBaseDatos_();
+  const requiredSheets = [
+    'REPORTES',
+    'HISTORIAL_REPORTES',
+    'TELEGRAM_LOG',
+    'REPORTE_PARTICIPANTES'
+  ];
+  const missingSheet = requiredSheets.some(function(sheetName) {
+    return !database.getSheetByName(sheetName);
+  });
+  if (missingSheet) {
+    asegurarEstructuraTelegram_();
+  }
 }
 
 function obtenerIdentidadTelegram_(user) {

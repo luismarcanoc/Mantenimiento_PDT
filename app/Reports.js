@@ -1,8 +1,22 @@
 const REPORT_LIMITS = Object.freeze({
   SEARCH_RESULTS: 20,
   LOCATION_RESULTS: 150,
-  EVIDENCE_BYTES: 8 * 1024 * 1024
+  EVIDENCE_BYTES: 8 * 1024 * 1024,
+  EQUIPMENT_CACHE_SECONDS: 300
 });
+
+const EQUIPMENT_CACHE_KEY = 'EQUIPOS_FORMULARIO_V1';
+const EQUIPMENT_FORM_FIELDS = Object.freeze([
+  'CODIGO_EQUIPO',
+  'NOMBRE',
+  'NOMBRE_ORIGINAL',
+  'TIPO_EQUIPO',
+  'EMPRESA',
+  'UBICACION',
+  'AREA',
+  'ESTATUS',
+  'ACTIVO'
+]);
 
 function obtenerUbicacionesEquipos() {
   const locations = {};
@@ -260,16 +274,47 @@ function validarEvidencia_(evidence) {
 }
 
 function leerEquipos_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(EQUIPMENT_CACHE_KEY);
+  if (cached) {
+    try {
+      return descompactarEquipos_(JSON.parse(cached));
+    } catch (error) {
+      console.warn('La cache de equipos no era valida y se volvera a generar.');
+    }
+  }
+
   const sheet = obtenerHoja_('EQUIPOS');
   if (sheet.getLastRow() < 2) {
     return [];
   }
   const values = sheet.getDataRange().getValues();
   const headers = values.shift().map(normalizarEncabezado_);
-  return values.map(function(row) {
+  const fieldIndexes = EQUIPMENT_FORM_FIELDS.map(function(field) {
+    return headers.indexOf(field);
+  });
+  const compactRows = values.map(function(row) {
+    return fieldIndexes.map(function(index) {
+      return index === -1 ? '' : row[index];
+    });
+  });
+  try {
+    cache.put(
+      EQUIPMENT_CACHE_KEY,
+      JSON.stringify(compactRows),
+      REPORT_LIMITS.EQUIPMENT_CACHE_SECONDS
+    );
+  } catch (error) {
+    console.warn('La lista de equipos excedio el espacio de cache disponible.');
+  }
+  return descompactarEquipos_(compactRows);
+}
+
+function descompactarEquipos_(rows) {
+  return rows.map(function(row) {
     const record = {};
-    headers.forEach(function(header, index) {
-      record[header] = row[index];
+    EQUIPMENT_FORM_FIELDS.forEach(function(field, index) {
+      record[field] = row[index];
     });
     return record;
   });
@@ -315,10 +360,14 @@ function siguienteNumeroReporte_() {
   if (sheet.getLastRow() < 2) {
     return 1;
   }
-  const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues();
-  return values.reduce(function(maximum, row) {
-    const current = Number(row[currentIndex]) || 0;
-    const legacy = Number(row[legacyIndex]) || 0;
+  const rowCount = sheet.getLastRow() - 1;
+  const currentValues = sheet.getRange(2, currentIndex + 1, rowCount, 1)
+    .getValues();
+  const legacyValues = sheet.getRange(2, legacyIndex + 1, rowCount, 1)
+    .getValues();
+  return currentValues.reduce(function(maximum, row, index) {
+    const current = Number(row[0]) || 0;
+    const legacy = Number(legacyValues[index][0]) || 0;
     return Math.max(maximum, current, legacy);
   }, 0) + 1;
 }
