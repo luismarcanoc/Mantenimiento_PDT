@@ -24,6 +24,13 @@ npx --yes @google/clasp push
 
 Los despliegues se realizan solo despues de probar la version nueva.
 
+## Hoja QR e instructivo
+
+La URL estable del formulario termina en `/exec`. Su instructivo se abre con
+`?vista=instructivo`. Consulta [la guia de publicacion y montaje](docs/DESPLIEGUE_Y_QR.md)
+para conservar la misma URL al publicar nuevas versiones y preparar los QR de
+impresion. El generador reproducible esta en `scripts/generar_material_qr.py`.
+
 ## Telegram
 
 La integracion usa un bot exclusivo y polling cada minuto. El token y el ID del

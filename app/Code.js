@@ -18,8 +18,16 @@ function probarConexionBase() {
 }
 
 function doGet(e) {
-  const template = HtmlService.createTemplateFromFile('Index');
   const parameters = e && e.parameter ? e.parameter : {};
+  if (parameters.vista === 'instructivo') {
+    const guide = HtmlService.createTemplateFromFile('Instructivo');
+    guide.logoUrl = APP_CONFIG.ASSET_BASE_URL + '/logopandetata.png';
+    guide.formUrl = ScriptApp.getService().getUrl();
+    return guide.evaluate()
+      .setTitle('Cómo reportar | Pan de Tata')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  }
+  const template = HtmlService.createTemplateFromFile('Index');
   template.initialCode = limpiarCodigoEquipo_(
     parameters.equipo ||
     parameters.codigo ||

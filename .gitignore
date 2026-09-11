@@ -11,3 +11,8 @@ node_modules/
 .env
 .env.*
 *.log
+
+# Material generado y revisiones de impresión
+/output/
+/tmp/
+__pycache__/

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #25221f; background: #faf8f3; font: 17px/1.6 Arial, sans-serif; }
+    main { max-width: 760px; margin: auto; padding: 24px 22px 48px; }
+    header { text-align: center; border-bottom: 2px solid #b3874e; padding-bottom: 24px; }
+    img { width: 120px; height: 120px; object-fit: contain; }
+    h1 { font-size: 30px; line-height: 1.2; margin: 12px 0; }
+    h2 { font-size: 21px; line-height: 1.35; margin: 0 0 8px; }
+    p { margin: 8px 0; }
+    .subtitle { color: #62584a; }
+    ol { padding-left: 26px; }
+    li { padding: 12px 0 16px 6px; }
+    li::marker { font-weight: bold; color: #79552a; }
+    .note { padding: 18px; background: #f0e7d8; border-left: 4px solid #98703b; margin: 22px 0; }
+    .button { display: block; text-align: center; padding: 15px 20px; background: #25221f; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 24px; }
+    footer { font-size: 13px; color: #62584a; margin-top: 28px; }
+    @media print { body { background: white; } main { max-width: none; } .button { display: none; } li { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="<?= logoUrl ?>" alt="Pan de Tata">
+      <p class="subtitle">IT Y MANTENIMIENTO</p>
+      <h1>Cómo realizar un reporte</h1>
+      <p>Una sola entrada para informar fallas de equipos o instalaciones.</p>
+    </header>
+    <ol>
+      <li><h2>Abre el formulario</h2><p>Escanea el QR grande de la hoja con la cámara del teléfono y toca el enlace. Necesitas conexión a internet. Si llegaste desde el QR pequeño, usa el botón <strong>Abrir formulario</strong> al final de esta página.</p></li>
+      <li><h2>Selecciona el tipo de reporte</h2><p>Elige <strong>Mantenimiento</strong> para equipos e instalaciones, o <strong>IT</strong> para incidencias informáticas. El formulario comienza con Mantenimiento seleccionado.</p></li>
+      <li><h2>Ubica el equipo</h2><p>Selecciona primero la <strong>Ubicación</strong>. Busca el equipo por nombre, código o área y toca el resultado correcto. Comprueba la ubicación y el área que aparecen en la ficha.</p><p>Si elegiste otro equipo, pulsa <strong>Cambiar</strong>. Si no aparece, pulsa <strong>No encuentro el equipo</strong> e indica el elemento afectado y su ubicación; puedes añadir el área.</p></li>
+      <li><h2>Describe lo que ocurre</h2><p>Escribe tu nombre. El correo es opcional. En <strong>Descripción de la incidencia</strong>, indica qué falla, desde cuándo y cómo afecta el trabajo.</p><p>Ejemplo: «El horno de producción no alcanza la temperatura desde las 8:00 a. m.; el calentamiento se detiene a 120 °C».</p></li>
+      <li><h2>Indica el estado y la prioridad</h2><p>Marca si el equipo está detenido y selecciona Baja, Media, Alta o Crítica según el impacto y los criterios de tu responsable. Puedes adjuntar una foto o un video de hasta <strong>8 MB</strong>: JPG, PNG, WEBP, MP4 o MOV.</p></li>
+      <li><h2>Envía y conserva el número</h2><p>Pulsa <strong>Enviar reporte</strong> una sola vez y espera la confirmación <strong>Reporte registrado</strong>. Guarda el número mostrado para identificar el caso. Usa <strong>Crear otro reporte</strong> solo para una incidencia distinta.</p></li>
+    </ol>
+    <div class="note"><h2>Si no puedes terminar</h2><p>Si la lista tarda en cargar, revisa la conexión y espera antes de volver a intentar. Si aparece un error, sigue el mensaje del formulario. Si el envío queda sin confirmación, consulta al responsable antes de repetirlo para evitar duplicados.</p></div>
+    <h2>¿Qué ocurre después?</h2>
+    <p>El reporte se guarda en el sistema y, cuando Telegram está configurado y disponible, se notifica al grupo. El personal que lo atiende pulsa <strong>Participar</strong>; una segunda pulsación retira su participación. Al terminar, pulsa <strong>✅ Listo</strong> o responde <strong>Listo</strong> al mensaje del reporte.</p>
+    <p>Los botones pueden tardar alrededor de un minuto, más el tiempo de procesamiento. Al cerrar, el mensaje se resume en una línea, por ejemplo: «Reporte #2841 completado por Luis Marcano +2». El detalle y los participantes permanecen registrados.</p>
+    <a class="button" href="<?= formUrl ?>">Abrir formulario</a>
+    <footer>Pan de Tata · Mantenimiento PDT · Instructivo de uso</footer>
+  </main>
+</body>
+</html>
