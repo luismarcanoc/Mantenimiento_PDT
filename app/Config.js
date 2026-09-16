@@ -1,5 +1,5 @@
 const APP_CONFIG = Object.freeze({
-  VERSION: '0.3.1',
+  VERSION: '0.4.0',
   TIME_ZONE: 'America/Caracas',
   ASSET_BASE_URL: 'https://produccionpdt.com',
   SPREADSHEET_ID: '1LuPBr--e14q2Kyf_KBydut9HIBffPpZa5Ua_aD1nrN0',

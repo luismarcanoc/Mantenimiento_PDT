@@ -396,7 +396,7 @@ function reintentarCompactacionesTelegram_(credentials) {
 
 function construirMensajeReporteTelegram_(report, participants) {
   const number = escaparHtmlTelegram_(report.NUMERO_REPORTE);
-  const type = escaparHtmlTelegram_(report.TIPO_REPORTE);
+  const type = escaparHtmlTelegram_(nombreTipoReporte_(report.TIPO_REPORTE));
   const priority = escaparHtmlTelegram_(report.PRIORIDAD);
   const equipment = escaparHtmlTelegram_(report.NOMBRE_EQUIPO || 'Sin equipo');
   const code = escaparHtmlTelegram_(report.CODIGO_EQUIPO || 'Sin codigo');

@@ -5,12 +5,14 @@ const REPORT_LIMITS = Object.freeze({
   EQUIPMENT_CACHE_SECONDS: 300
 });
 
-const EQUIPMENT_CACHE_KEY = 'EQUIPOS_FORMULARIO_V1';
+const EQUIPMENT_CACHE_KEY = 'EQUIPOS_FORMULARIO_V2';
 const EQUIPMENT_FORM_FIELDS = Object.freeze([
   'CODIGO_EQUIPO',
   'NOMBRE',
   'NOMBRE_ORIGINAL',
   'TIPO_EQUIPO',
+  'MARCA',
+  'INFORMACION',
   'EMPRESA',
   'UBICACION',
   'AREA',
@@ -36,7 +38,35 @@ function obtenerUbicacionesEquipos() {
   });
 }
 
-function buscarEquiposPorUbicacion(location, query) {
+function obtenerAreasEquipos(location) {
+  const areas = {};
+  leerEquipos_().forEach(function(equipment) {
+    const area = texto_(equipment.AREA);
+    if (equipment.ACTIVO && area &&
+        normalizarBusqueda_(equipment.UBICACION) === normalizarBusqueda_(location)) {
+      areas[normalizarBusqueda_(area)] = area;
+    }
+  });
+  return Object.keys(areas).map(function(key) { return areas[key]; })
+    .sort(function(a, b) { return a.localeCompare(b, 'es'); });
+}
+
+function obtenerCorreoUsuarioDisponible() {
+  try {
+    return texto_(Session.getActiveUser().getEmail()).toLowerCase();
+  } catch (error) {
+    return '';
+  }
+}
+
+function nombreTipoReporte_(type) {
+  return {
+    IT: 'IT', MANTENIMIENTO: 'Mantenimiento',
+    MECANICO: 'Mantenimiento mecánico', SERVICIOS_GENERALES: 'Servicios generales'
+  }[type] || type;
+}
+
+function buscarEquiposPorUbicacion(location, query, area) {
   const selectedLocation = normalizarBusqueda_(location);
   const search = normalizarBusqueda_(query);
   if (!selectedLocation) {
@@ -45,7 +75,8 @@ function buscarEquiposPorUbicacion(location, query) {
 
   return leerEquipos_().filter(function(equipment) {
     if (!equipment.ACTIVO ||
-        normalizarBusqueda_(equipment.UBICACION) !== selectedLocation) {
+        normalizarBusqueda_(equipment.UBICACION) !== selectedLocation ||
+        (area && normalizarBusqueda_(equipment.AREA) !== normalizarBusqueda_(area))) {
       return false;
     }
     if (!search) {
@@ -55,6 +86,8 @@ function buscarEquiposPorUbicacion(location, query) {
       equipment.CODIGO_EQUIPO,
       equipment.NOMBRE,
       equipment.NOMBRE_ORIGINAL,
+      equipment.MARCA,
+      equipment.INFORMACION,
       equipment.AREA
     ].join(' '));
     return haystack.indexOf(search) !== -1;
@@ -196,13 +229,13 @@ function crearReporte(data) {
 
 function validarReporte_(data) {
   const type = normalizarClave_(data.tipoReporte);
-  if (['IT', 'MANTENIMIENTO'].indexOf(type) === -1) {
-    throw new Error('Selecciona si el reporte corresponde a IT o Mantenimiento.');
+  if (['IT', 'MANTENIMIENTO', 'MECANICO', 'SERVICIOS_GENERALES'].indexOf(type) === -1) {
+    throw new Error('Selecciona IT, Mantenimiento mecánico o Servicios generales.');
   }
 
   const person = limitarTexto_(data.personaReporta, 120);
   const description = limitarTexto_(data.descripcion, 2000);
-  const email = limitarTexto_(data.correoReporta, 160).toLowerCase();
+  const email = limitarTexto_(data.correoReporta || obtenerCorreoUsuarioDisponible(), 160).toLowerCase();
   const withoutEquipment = Boolean(data.sinEquipo);
   if (person.length < 2) {
     throw new Error('Escribe el nombre de la persona que realiza el reporte.');
@@ -332,6 +365,8 @@ function serializarEquipo_(equipment) {
     codigo: texto_(equipment.CODIGO_EQUIPO),
     nombre: texto_(equipment.NOMBRE || equipment.NOMBRE_ORIGINAL),
     tipo: texto_(equipment.TIPO_EQUIPO),
+    marca: texto_(equipment.MARCA),
+    informacion: texto_(equipment.INFORMACION),
     empresa: texto_(equipment.EMPRESA),
     ubicacion: texto_(equipment.UBICACION),
     area: texto_(equipment.AREA),

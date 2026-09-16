@@ -25,16 +25,21 @@
             <p>Selecciona el equipo que debe atenderlo.</p>
           </div>
         </div>
-        <div class="segmented" role="radiogroup" aria-label="Tipo de reporte">
+        <div class="segmented report-types" role="radiogroup" aria-label="Tipo de reporte">
           <label>
-            <input type="radio" name="tipoReporte" value="MANTENIMIENTO" checked>
-            <span>Mantenimiento</span>
+            <input type="radio" name="tipoReporte" value="MECANICO" checked>
+            <span>Mantenimiento mecánico</span>
+          </label>
+          <label>
+            <input type="radio" name="tipoReporte" value="SERVICIOS_GENERALES">
+            <span>Servicios generales</span>
           </label>
           <label>
             <input type="radio" name="tipoReporte" value="IT">
             <span>IT</span>
           </label>
         </div>
+        <p class="field-note">Mecánico: fallas de equipos. Servicios generales: paredes, pintura e instalaciones. IT: informática.</p>
       </section>
 
       <section class="form-section" aria-labelledby="equipment-title">
@@ -42,7 +47,7 @@
           <span class="step">2</span>
           <div>
             <h2 id="equipment-title">Equipo o elemento</h2>
-            <p>Busca por código, nombre o ubicación.</p>
+            <p>Selecciona ubicación y área; busca por nombre, código o información.</p>
           </div>
         </div>
 
@@ -51,11 +56,16 @@
           <select id="location-select">
             <option value="">Cargando ubicaciones...</option>
           </select>
+          <div id="area-filter-wrap" hidden>
+            <label for="area-select">Área <span>(opcional)</span></label>
+            <select id="area-select"><option value="">Todas las áreas</option></select>
+            <p id="area-status" class="field-note" aria-live="polite"></p>
+          </div>
 
           <div id="equipment-search-wrap" class="equipment-search-wrap" hidden>
             <label for="equipment-search">Equipo</label>
             <input id="equipment-search" type="search" autocomplete="off"
-              placeholder="Buscar por nombre, código o área">
+              placeholder="Nombre, código, marca o información">
             <div id="search-status" class="field-note" aria-live="polite"></div>
             <div id="equipment-results" class="search-results" hidden></div>
           </div>
@@ -73,6 +83,14 @@
               <div>
                 <dt>Área</dt>
                 <dd id="selected-area"></dd>
+              </div>
+              <div>
+                <dt>Marca</dt>
+                <dd id="selected-brand"></dd>
+              </div>
+              <div class="equipment-information">
+                <dt>Información</dt>
+                <dd id="selected-information"></dd>
               </div>
             </dl>
           </div>
@@ -115,7 +133,8 @@
           </div>
           <div>
             <label for="email">Correo electrónico <span>(opcional)</span></label>
-            <input id="email" type="email" maxlength="160" autocomplete="email">
+            <input id="email" type="email" maxlength="160" autocomplete="email" aria-describedby="email-status">
+            <p id="email-status" class="field-note">Si Google permite obtener tu correo, se completará automáticamente.</p>
           </div>
         </div>
 

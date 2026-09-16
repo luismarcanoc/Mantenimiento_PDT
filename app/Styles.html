@@ -105,6 +105,10 @@
   .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
   .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .report-types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .equipment-information { grid-column: 1 / -1; }
+  #selected-information { white-space: pre-wrap; }
+  .segmented input:focus-visible + span { outline: 3px solid var(--brand-dark); outline-offset: 2px; }
   .segmented label { margin: 0; }
   .segmented input { position: absolute; opacity: 0; pointer-events: none; }
   .segmented span {
@@ -196,6 +200,7 @@
   .success-mark { display: inline-block; padding: 7px 14px; border-radius: 999px; background: #dcecdf; color: var(--success); font-weight: 900; }
 
   @media (max-width: 620px) {
+    .report-types { grid-template-columns: 1fr; }
     .app-header { width: min(100% - 24px, 760px); padding-top: 18px; }
     .brand-logo { width: 62px; height: 62px; }
     h1 { font-size: 1.55rem; }

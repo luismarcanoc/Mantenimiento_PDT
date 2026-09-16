@@ -6,6 +6,8 @@
       selectedEquipment: null,
       manual: false,
       searchTimer: null,
+      searchVersion: 0,
+      areaVersion: 0,
       submitting: false
     };
 
@@ -13,6 +15,9 @@
       form: document.getElementById('report-form'),
       equipmentControls: document.getElementById('equipment-controls'),
       location: document.getElementById('location-select'),
+      area: document.getElementById('area-select'),
+      areaWrap: document.getElementById('area-filter-wrap'),
+      areaStatus: document.getElementById('area-status'),
       searchWrap: document.getElementById('equipment-search-wrap'),
       search: document.getElementById('equipment-search'),
       searchStatus: document.getElementById('search-status'),
@@ -22,6 +27,8 @@
       selectedName: document.getElementById('selected-name'),
       selectedLocation: document.getElementById('selected-location'),
       selectedArea: document.getElementById('selected-area'),
+      selectedBrand: document.getElementById('selected-brand'),
+      selectedInformation: document.getElementById('selected-information'),
       changeEquipment: document.getElementById('change-equipment'),
       manualToggle: document.getElementById('manual-toggle'),
       manualFields: document.getElementById('manual-fields'),
@@ -75,12 +82,14 @@
           '<strong>' + escapeHtml(equipment.nombre || 'Equipo sin nombre') + '</strong>' +
           '<span>' + escapeHtml(equipment.codigo) + '</span>' +
           '<small>Área: ' + escapeHtml(equipment.area || 'Sin área registrada') + '</small>' +
+          (equipment.informacion ? '<small>' + escapeHtml(equipment.informacion) + '</small>' : '') +
           '</button>';
       }).join('');
       elements.results.hidden = false;
     }
 
     async function searchEquipment() {
+      const version = ++state.searchVersion;
       const query = elements.search.value.trim();
       const location = elements.location.value;
       if (!location) {
@@ -88,21 +97,66 @@
         return;
       }
       elements.searchStatus.textContent = 'Buscando...';
+      elements.results.hidden = true;
       try {
-        renderResults(await callServer('buscarEquiposPorUbicacion', location, query));
+        const results = await callServer('buscarEquiposPorUbicacion', location, query, elements.area.value);
+        if (version === state.searchVersion && !state.selectedEquipment && !state.manual) renderResults(results);
       } catch (error) {
-        elements.searchStatus.textContent = error.message;
+        if (version === state.searchVersion) elements.searchStatus.textContent = error.message;
+      }
+    }
+
+    async function loadAreas() {
+      const version = ++state.areaVersion;
+      const location = elements.location.value;
+      elements.area.innerHTML = '<option value="">Todas las áreas</option>';
+      elements.areaWrap.hidden = !location;
+      elements.area.disabled = true;
+      elements.areaStatus.textContent = location ? 'Cargando áreas...' : '';
+      if (!location) return;
+      try {
+        const areas = await callServer('obtenerAreasEquipos', location);
+        if (version !== state.areaVersion) return;
+        elements.area.innerHTML += areas.map(function(area) {
+          return '<option value="' + escapeHtml(area) + '">' + escapeHtml(area) + '</option>';
+        }).join('');
+        elements.areaStatus.textContent = '';
+      } catch (error) {
+        if (version === state.areaVersion) elements.areaStatus.textContent = 'No se pudieron cargar las áreas. Puedes buscar por nombre o código.';
+      } finally {
+        if (version === state.areaVersion) elements.area.disabled = false;
+      }
+    }
+
+    async function loadEmail() {
+      const email = document.getElementById('email');
+      const status = document.getElementById('email-status');
+      try {
+        const value = await callServer('obtenerCorreoUsuarioDisponible');
+        if (value && !email.value) {
+          email.value = value;
+          status.textContent = 'Correo completado desde tu cuenta de Google. Puedes corregirlo.';
+        } else {
+          status.textContent = 'Correo opcional. Si no aparece, puedes escribirlo.';
+        }
+      } catch (error) {
+        status.textContent = 'Correo opcional. Puedes escribirlo si deseas.';
       }
     }
 
     function selectEquipment(equipment) {
+      state.searchVersion += 1;
       state.selectedEquipment = equipment;
       state.manual = false;
       elements.selectedCode.textContent = equipment.codigo;
       elements.selectedName.textContent = equipment.nombre || 'Equipo sin nombre';
       elements.selectedLocation.textContent = equipment.ubicacion || 'Sin ubicación registrada';
       elements.selectedArea.textContent = equipment.area || 'Sin área registrada';
+      elements.selectedBrand.textContent = equipment.marca || 'Sin marca registrada';
+      elements.selectedInformation.textContent = equipment.informacion || 'Sin información adicional';
+      const changedLocation = elements.location.value !== equipment.ubicacion;
       setLocationValue(equipment.ubicacion);
+      if (changedLocation) loadAreas();
       elements.selected.hidden = false;
       elements.equipmentControls.hidden = true;
       elements.results.hidden = true;
@@ -128,6 +182,9 @@
     function toggleManual() {
       state.manual = !state.manual;
       if (state.manual) {
+        state.searchVersion += 1;
+        document.getElementById('manual-location').value = elements.location.value;
+        document.getElementById('manual-area').value = elements.area.value;
         state.selectedEquipment = null;
         elements.selected.hidden = true;
         elements.equipmentControls.hidden = true;
@@ -241,23 +298,33 @@
     }
 
     elements.search.addEventListener('input', function() {
+      state.searchVersion += 1;
+      elements.results.hidden = true;
       window.clearTimeout(state.searchTimer);
       state.searchTimer = window.setTimeout(searchEquipment, 280);
     });
     elements.location.addEventListener('change', function() {
+      state.searchVersion += 1;
+      window.clearTimeout(state.searchTimer);
       state.selectedEquipment = null;
       elements.search.value = '';
       elements.results.hidden = true;
       elements.searchWrap.hidden = !elements.location.value;
+      loadAreas();
       if (elements.location.value) searchEquipment();
+    });
+    elements.area.addEventListener('change', function() {
+      window.clearTimeout(state.searchTimer);
+      searchEquipment();
     });
     elements.results.addEventListener('click', async function(event) {
       const button = event.target.closest('[data-code]');
       if (!button) return;
+      const version = ++state.searchVersion;
       elements.searchStatus.textContent = 'Cargando equipo...';
       try {
         const equipment = await callServer('obtenerEquipoPorCodigo', button.dataset.code);
-        if (equipment) selectEquipment(equipment);
+        if (equipment && version === state.searchVersion && !state.manual) selectEquipment(equipment);
       } catch (error) {
         elements.searchStatus.textContent = error.message;
       }
@@ -269,6 +336,7 @@
       window.location.reload();
     });
 
+    loadEmail();
     loadLocations().then(loadInitialEquipment);
   })();
 </script>

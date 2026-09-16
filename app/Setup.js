@@ -100,6 +100,8 @@ function cargarCatalogosIniciales_() {
   const rows = [
     ['TIPO_REPORTE', 'IT', 'IT', 1, true],
     ['TIPO_REPORTE', 'MANTENIMIENTO', 'Mantenimiento', 2, true],
+    ['TIPO_REPORTE', 'MECANICO', 'Mantenimiento mecánico', 3, true],
+    ['TIPO_REPORTE', 'SERVICIOS_GENERALES', 'Servicios generales', 4, true],
     ['ESTADO_REPORTE', 'NUEVO', 'Nuevo', 1, true],
     ['ESTADO_REPORTE', 'ASIGNADO', 'Asignado', 2, true],
     ['ESTADO_REPORTE', 'EN_PROCESO', 'En proceso', 3, true],
