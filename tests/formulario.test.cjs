@@ -54,4 +54,21 @@ for (const param of ['equipo','codigo','entry.88648657']) {
   assert.equal(template.initialCode, 'M-AA10-PCBOF');
 }
 new vm.Script(read('Scripts.html').replace(/^<script>\s*/, '').replace(/<\/script>\s*$/, ''));
-console.log('OK: tipos nuevos y antiguos, correo, áreas, ficha, Telegram y parámetros QR.');
+const descriptionNode = {textContent: ''};
+let selectedType = 'MECANICO';
+const descriptionContext = vm.createContext({document: {
+  querySelector: () => ({value: selectedType}),
+  getElementById: () => descriptionNode
+}});
+const descriptionFunction = read('Scripts.html').match(/    function updateReportTypeDescription\(\) \{[\s\S]*?\n    \}/)[0];
+vm.runInContext(descriptionFunction, descriptionContext);
+for (const [type, expected] of Object.entries({
+  MECANICO: 'Mecánico: fallas de equipos.',
+  SERVICIOS_GENERALES: 'Servicios generales: paredes, pintura e instalaciones.',
+  IT: 'IT: informática.'
+})) {
+  selectedType = type;
+  descriptionContext.updateReportTypeDescription();
+  assert.equal(descriptionNode.textContent, expected);
+}
+console.log('OK: tipos nuevos y antiguos, correo, áreas, ficha, Telegram, parámetros QR y descripción seleccionada.');

@@ -39,6 +39,16 @@
       newReport: document.getElementById('new-report')
     };
 
+    function updateReportTypeDescription() {
+      const descriptions = {
+        MECANICO: 'Mecánico: fallas de equipos.',
+        SERVICIOS_GENERALES: 'Servicios generales: paredes, pintura e instalaciones.',
+        IT: 'IT: informática.'
+      };
+      const selected = document.querySelector('input[name="tipoReporte"]:checked');
+      document.getElementById('report-type-description').textContent = selected ? descriptions[selected.value] || '' : '';
+    }
+
     function callServer(functionName) {
       const args = Array.prototype.slice.call(arguments, 1);
       return new Promise(function(resolve, reject) {
@@ -336,6 +346,10 @@
       window.location.reload();
     });
 
+    document.querySelectorAll('input[name="tipoReporte"]').forEach(function(input) {
+      input.addEventListener('change', updateReportTypeDescription);
+    });
+    updateReportTypeDescription();
     loadEmail();
     loadLocations().then(loadInitialEquipment);
   })();

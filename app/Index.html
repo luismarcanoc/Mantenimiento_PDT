@@ -25,7 +25,7 @@
             <p>Selecciona el equipo que debe atenderlo.</p>
           </div>
         </div>
-        <div class="segmented report-types" role="radiogroup" aria-label="Tipo de reporte">
+        <div class="segmented report-types" role="radiogroup" aria-label="Tipo de reporte" aria-describedby="report-type-description">
           <label>
             <input type="radio" name="tipoReporte" value="MECANICO" checked>
             <span>Mantenimiento mecánico</span>
@@ -39,7 +39,7 @@
             <span>IT</span>
           </label>
         </div>
-        <p class="field-note">Mecánico: fallas de equipos. Servicios generales: paredes, pintura e instalaciones. IT: informática.</p>
+        <p id="report-type-description" class="field-note" aria-live="polite">Mecánico: fallas de equipos.</p>
       </section>
 
       <section class="form-section" aria-labelledby="equipment-title">
