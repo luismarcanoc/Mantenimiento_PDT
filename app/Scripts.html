@@ -5,6 +5,7 @@
     const state = {
       selectedEquipment: null,
       manual: false,
+      generalServices: false,
       searchTimer: null,
       searchVersion: 0,
       areaVersion: 0,
@@ -47,6 +48,18 @@
       };
       const selected = document.querySelector('input[name="tipoReporte"]:checked');
       document.getElementById('report-type-description').textContent = selected ? descriptions[selected.value] || '' : '';
+    }
+
+    function handleReportTypeChange() {
+      updateReportTypeDescription();
+      const selected = document.querySelector('input[name="tipoReporte"]:checked');
+      const generalServices = !!selected && selected.value === 'SERVICIOS_GENERALES';
+      const leavingGeneralServices = state.generalServices && !generalServices;
+      state.generalServices = generalServices;
+      elements.manualToggle.hidden = generalServices;
+      if ((generalServices && !state.manual) || (leavingGeneralServices && state.manual)) {
+        toggleManual();
+      }
     }
 
     function callServer(functionName) {
@@ -190,6 +203,10 @@
     }
 
     function toggleManual() {
+      if (state.generalServices && state.manual) return;
+      window.clearTimeout(state.searchTimer);
+      state.searchVersion += 1;
+      elements.results.hidden = true;
       state.manual = !state.manual;
       if (state.manual) {
         state.searchVersion += 1;
@@ -275,12 +292,15 @@
     }
 
     async function loadInitialEquipment() {
+      if (state.manual) return;
+      const version = state.searchVersion;
       const code = String(window.APP_INITIAL_CODE || '').trim();
       if (!code) return;
       elements.search.value = code;
       elements.searchStatus.textContent = 'Identificando equipo...';
       try {
         const equipment = await callServer('obtenerEquipoPorCodigo', code);
+        if (state.manual || version !== state.searchVersion) return;
         if (equipment) {
           selectEquipment(equipment);
         } else {
@@ -347,9 +367,9 @@
     });
 
     document.querySelectorAll('input[name="tipoReporte"]').forEach(function(input) {
-      input.addEventListener('change', updateReportTypeDescription);
+      input.addEventListener('change', handleReportTypeChange);
     });
-    updateReportTypeDescription();
+    handleReportTypeChange();
     loadEmail();
     loadLocations().then(loadInitialEquipment);
   })();

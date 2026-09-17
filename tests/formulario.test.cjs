@@ -71,4 +71,39 @@ for (const [type, expected] of Object.entries({
   descriptionContext.updateReportTypeDescription();
   assert.equal(descriptionNode.textContent, expected);
 }
-console.log('OK: tipos nuevos y antiguos, correo, áreas, ficha, Telegram, parámetros QR y descripción seleccionada.');
+const manualNodes = {};
+const node = id => manualNodes[id] ||= {value: '', hidden: false, focus() {}};
+const manualContext = vm.createContext({
+  state: {manual: false, generalServices: false, searchVersion: 0, selectedEquipment: {codigo: 'A'}},
+  elements: Object.fromEntries(['manualToggle','results','location','area','selected',
+    'equipmentControls','manualFields','searchWrap'].map(id => [id, node(id)])),
+  document: {querySelector: () => ({value: selectedType}), getElementById: node},
+  window: {clearTimeout() {}}, updateReportTypeDescription() {}
+});
+for (const name of ['toggleManual', 'handleReportTypeChange']) {
+  vm.runInContext(read('Scripts.html').match(new RegExp('    function ' + name + '\\(\\) \\{[\\s\\S]*?\\n    \\}'))[0], manualContext);
+}
+manualContext.elements.location.value = 'Bello Campo';
+manualContext.elements.area.value = 'Tienda';
+selectedType = 'SERVICIOS_GENERALES';
+manualContext.handleReportTypeChange();
+assert.equal(manualContext.state.manual, true);
+assert.equal(manualContext.state.selectedEquipment, null);
+assert.equal(manualContext.elements.manualFields.hidden, false);
+assert.equal(manualContext.elements.equipmentControls.hidden, true);
+assert.equal(manualContext.elements.manualToggle.hidden, true);
+assert.equal(node('manual-location').value, 'Bello Campo');
+assert.equal(node('manual-area').value, 'Tienda');
+manualContext.handleReportTypeChange();
+manualContext.toggleManual();
+assert.equal(manualContext.state.manual, true);
+for (const type of ['IT', 'MECANICO']) {
+  selectedType = type;
+  manualContext.handleReportTypeChange();
+  assert.equal(manualContext.state.manual, false);
+  assert.equal(manualContext.elements.manualToggle.hidden, false);
+  assert.equal(manualContext.elements.equipmentControls.hidden, false);
+  selectedType = 'SERVICIOS_GENERALES';
+  manualContext.handleReportTypeChange();
+}
+console.log('OK: formulario, descripción seleccionada y entrada manual automática en servicios generales.');
