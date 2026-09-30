@@ -5,7 +5,7 @@ const REPORT_LIMITS = Object.freeze({
   EQUIPMENT_CACHE_SECONDS: 300
 });
 
-const EQUIPMENT_CACHE_KEY = 'EQUIPOS_FORMULARIO_V2';
+const EQUIPMENT_CACHE_KEY = 'EQUIPOS_FORMULARIO_V3';
 const EQUIPMENT_FORM_FIELDS = Object.freeze([
   'CODIGO_EQUIPO',
   'NOMBRE',
@@ -308,7 +308,10 @@ function validarEvidencia_(evidence) {
 
 function leerEquipos_() {
   const cache = CacheService.getScriptCache();
-  const cached = cache.get(EQUIPMENT_CACHE_KEY);
+  const sheet = obtenerHoja_('EQUIPOS');
+  const lastRow = sheet.getLastRow();
+  const cacheKey = EQUIPMENT_CACHE_KEY + '_' + lastRow;
+  const cached = cache.get(cacheKey);
   if (cached) {
     try {
       return descompactarEquipos_(JSON.parse(cached));
@@ -317,8 +320,7 @@ function leerEquipos_() {
     }
   }
 
-  const sheet = obtenerHoja_('EQUIPOS');
-  if (sheet.getLastRow() < 2) {
+  if (lastRow < 2) {
     return [];
   }
   const values = sheet.getDataRange().getValues();
@@ -333,7 +335,7 @@ function leerEquipos_() {
   });
   try {
     cache.put(
-      EQUIPMENT_CACHE_KEY,
+      cacheKey,
       JSON.stringify(compactRows),
       REPORT_LIMITS.EQUIPMENT_CACHE_SECONDS
     );

@@ -5,6 +5,7 @@ Nuevo sistema de reportes, inventario y mantenimiento de Pan de Tata.
 ## Estructura local
 
 - `app/`: codigo del Apps Script nuevo.
+- `registro_equipos/`: aplicacion administrativa para agregar equipos con la codificacion oficial.
 - `referencias/`: copias locales de los sistemas anteriores. No se versionan.
 
 ## Base de datos
@@ -23,6 +24,13 @@ npx --yes @google/clasp push
 ```
 
 Los despliegues se realizan solo despues de probar la version nueva.
+
+## Registro de equipos
+
+El modulo administrativo genera codigos con el formato `C-TTNN-EUUAA`, valida
+los catalogos de la plantilla y agrega las 18 columnas de `EQUIPOS`. Se publica
+como un proyecto separado para exigir una cuenta de Google. Consulta
+[la guia de acceso y operacion](docs/REGISTRO_EQUIPOS.md) antes de habilitar usuarios.
 
 ## Hoja QR e instructivo
 

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <?!= include_('Styles'); ?>
+</head>
+<body>
+  <header><div><span class="eyebrow">PAN DE TATA</span><h1>Registro de equipos</h1><p>Agrega equipos con el código oficial y sin editar la base manualmente.</p></div></header>
+  <main>
+    <section id="loading" class="panel status">Comprobando tu acceso…</section>
+    <section id="denied" class="panel error" hidden><h2>Acceso no disponible</h2><p id="denied-message"></p></section>
+    <form id="equipment-form" class="panel" hidden novalidate>
+      <div class="user-line">Cuenta autorizada: <strong id="user-email"></strong></div>
+      <h2>Clasificación y ubicación</h2>
+      <div class="grid">
+        <label>Categoría<select id="category" required></select></label>
+        <label>Tipo de equipo<select id="type" required></select></label>
+        <label>Empresa<select id="company" required></select></label>
+        <label>Ubicación<select id="location" required></select></label>
+        <label>Área<select id="area" required></select></label>
+      </div>
+      <div class="preview"><span>Código que se asignará</span><strong id="code-preview">Completa la clasificación</strong><small>El consecutivo se confirma nuevamente al guardar.</small></div>
+      <h2>Datos del equipo</h2>
+      <div class="grid">
+        <label class="wide">Nombre del equipo<input id="name" maxlength="160" required placeholder="Ej. Aire acondicionado #2"></label>
+        <label>Marca<input id="brand" maxlength="120" placeholder="Opcional"></label>
+        <label>Modelo<input id="model" maxlength="120" placeholder="Opcional"></label>
+        <label class="wide">Información adicional<textarea id="information" maxlength="500" rows="3" placeholder="Ej. Atiende la máquina de hielo"></textarea></label>
+        <label class="wide">Enlace de imagen<input id="image-url" type="url" maxlength="500" placeholder="https://… (opcional)"></label>
+      </div>
+      <p id="form-message" class="message" aria-live="polite"></p>
+      <button id="submit" type="submit">Registrar equipo</button>
+    </form>
+    <section id="success" class="panel success" hidden>
+      <h2>Equipo registrado</h2><p id="success-name"></p><div class="final-code" id="final-code"></div>
+      <a id="report-link" target="_blank" rel="noopener">Probar enlace prellenado</a>
+      <button id="another" type="button" class="secondary">Registrar otro equipo</button>
+    </section>
+  </main>
+  <?!= include_('Scripts'); ?>
+</body>
+</html>

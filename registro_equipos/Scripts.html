@@ -1,0 +1,55 @@
+<script>
+(() => {
+  'use strict';
+  const state = {catalog:null, previewVersion:0, saving:false};
+  const $ = id => document.getElementById(id);
+  const fields = ['category','type','company','location','area'];
+  function server(name, ...args) {
+    return new Promise((resolve,reject) => google.script.run.withSuccessHandler(resolve)
+      .withFailureHandler(error => reject(new Error(error && error.message ? error.message : String(error))))[name](...args));
+  }
+  function options(items, placeholder) {
+    return `<option value="">${escapeHtml(placeholder)}</option>` + items.map(item =>
+      `<option value="${escapeHtml(item.code)}">${escapeHtml(item.code)} · ${escapeHtml(item.name)}</option>`).join('');
+  }
+  function escapeHtml(value) { const span=document.createElement('span'); span.textContent=value||''; return span.innerHTML; }
+  function payload() {
+    return {categoryCode:$('category').value,typeCode:$('type').value,companyCode:$('company').value,
+      locationCode:$('location').value,areaCode:$('area').value,name:$('name').value,
+      brand:$('brand').value,model:$('model').value,information:$('information').value,imageUrl:$('image-url').value};
+  }
+  function updateTypes() {
+    $('type').innerHTML=options(state.catalog.types[$('category').value]||[],'Selecciona el tipo');
+    schedulePreview();
+  }
+  async function preview() {
+    const data=payload(); const version=++state.previewVersion;
+    if (fields.some(id => !$(id).value)) { $('code-preview').textContent='Completa la clasificación'; return; }
+    $('code-preview').textContent='Calculando…';
+    try { const code=await server('previsualizarCodigoEquipo',data); if(version===state.previewVersion)$('code-preview').textContent=code; }
+    catch(error){ if(version===state.previewVersion)$('code-preview').textContent=error.message; }
+  }
+  function schedulePreview(){ state.previewVersion+=1; window.clearTimeout(state.previewTimer); state.previewTimer=window.setTimeout(preview,180); }
+  async function init(){
+    try {
+      const result=await server('obtenerInicioRegistro'); state.catalog=result.catalog; $('user-email').textContent=result.email;
+      $('category').innerHTML=options(state.catalog.categories,'Selecciona la categoría');
+      $('company').innerHTML=options(state.catalog.companies,'Selecciona la empresa');
+      $('location').innerHTML=options(state.catalog.locations,'Selecciona la ubicación');
+      $('area').innerHTML=options(state.catalog.areas,'Selecciona el área'); updateTypes();
+      $('loading').hidden=true; $('equipment-form').hidden=false;
+    } catch(error){ $('loading').hidden=true; $('denied-message').textContent=error.message; $('denied').hidden=false; }
+  }
+  $('category').addEventListener('change',updateTypes); ['type','company','location','area'].forEach(id=>$(id).addEventListener('change',schedulePreview));
+  $('equipment-form').addEventListener('submit',async event=>{
+    event.preventDefault(); if(state.saving)return; $('form-message').textContent='';
+    if(!event.currentTarget.reportValidity())return; state.saving=true; $('submit').disabled=true; $('submit').textContent='Guardando…';
+    try { const result=await server('registrarEquipo',payload()); $('equipment-form').hidden=true; $('success-name').textContent=result.name;
+      $('final-code').textContent=result.code; $('report-link').href=result.reportUrl; $('success').hidden=false; window.scrollTo({top:0,behavior:'smooth'});
+    } catch(error){ $('form-message').textContent=error.message; }
+    finally { state.saving=false; $('submit').disabled=false; $('submit').textContent='Registrar equipo'; }
+  });
+  $('another').addEventListener('click',()=>{ $('equipment-form').reset(); $('success').hidden=true; $('equipment-form').hidden=false; updateTypes(); $('category').focus(); });
+  init();
+})();
+</script>
