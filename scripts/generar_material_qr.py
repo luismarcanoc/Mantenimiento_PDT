@@ -104,8 +104,8 @@ def poster(out, logo, size, form_url, guide_url):
     c.linkURL(guide_url, (15*mm, height-53*mm, 53*mm, height-15*mm))
     paragraph(c, 'INSTRUCTIVO', 15*mm, height-54*mm, 38*mm, 9, True, True)
     c.drawImage(str(logo), (width-44*mm)/2, height-60*mm, 44*mm, 44*mm, mask='auto')
-    paragraph(c, 'REPORTES DE IT<br/>Y MANTENIMIENTO', 15*mm, height-70*mm,
-              width-30*mm, 21, True, True)
+    paragraph(c, 'REPORTES DE MANTENIMIENTO', 15*mm, height-70*mm,
+              width-30*mm, 20, True, True)
     paragraph(c, 'Escanea aquí para informar una incidencia', 15*mm, height-96*mm,
               width-30*mm, 12, center=True)
     side = 112*mm
@@ -130,7 +130,7 @@ def user_guide(out, logo, size, form_url):
     y = header(c, logo, size, 'GUÍA DEL USUARIO', 'Cómo realizar\nun reporte', 1)
     items = [
         ('Abre el formulario', 'Escanea el QR grande con la cámara y toca el enlace. Necesitas internet. El QR pequeño abre las instrucciones. Desde allí puedes pulsar <b>Abrir formulario</b>.'),
-        ('Elige el tipo de reporte', 'Selecciona <b>Mantenimiento</b> para equipos e instalaciones o <b>IT</b> para incidencias informáticas. Mantenimiento está seleccionado inicialmente.'),
+        ('Elige el tipo de reporte', 'Selecciona <b>IT</b>, <b>Mantenimiento mecánico</b> o <b>Servicios generales</b>. En Servicios generales no necesitas buscar un equipo: el formulario pasa directamente a los detalles.'),
         ('Selecciona ubicación y equipo', 'Elige la <b>Ubicación</b>; después busca por nombre, código o área. Toca el resultado y comprueba la ficha. Para corregir la selección, pulsa <b>Cambiar</b>.'),
         ('Si el equipo no aparece', 'Pulsa <b>No encuentro el equipo</b>. Escribe el equipo o elemento afectado y su ubicación. El área es opcional. No necesitas consultar otra lista ni otro QR.'),
         ('Identifícate y describe la falla', 'Escribe tu nombre; el correo es opcional. Explica qué ocurre, desde cuándo y cómo afecta el trabajo.<br/><b>Ejemplo:</b> El horno no alcanza la temperatura desde las 8:00 a. m.; el calentamiento se detiene a 120 °C.'),
