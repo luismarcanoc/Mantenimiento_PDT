@@ -1,5 +1,5 @@
 const APP_CONFIG = Object.freeze({
-  VERSION: '0.4.0',
+  VERSION: '0.5.0',
   TIME_ZONE: 'America/Caracas',
   ASSET_BASE_URL: 'https://produccionpdt.com',
   SPREADSHEET_ID: '1LuPBr--e14q2Kyf_KBydut9HIBffPpZa5Ua_aD1nrN0',
@@ -21,6 +21,10 @@ const SHEET_SCHEMAS = Object.freeze({
     'UBICACION',
     'AREA',
     'ESTATUS',
+    'NUMERO_GLOBAL_TIPO',
+    'NUMERO_LOCAL_SEDE',
+    'REEMPLAZA_ID_EQUIPO',
+    'REEMPLAZADO_POR_ID_EQUIPO',
     'CODIGO_ANTERIOR',
     'IMAGEN_URL',
     'QR_LEGACY_URL',

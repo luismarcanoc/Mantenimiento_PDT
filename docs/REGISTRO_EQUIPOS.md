@@ -10,15 +10,29 @@ El formato es `C-TTNN-EUUAA`:
 
 - `C`: categoría general.
 - `TT`: tipo de equipo.
-- `NN`: consecutivo de dos dígitos calculado por empresa.
+- `NN`: consecutivo global de dos dígitos para ese tipo de equipo, sin importar la sede.
 - `E`: empresa.
 - `UU`: ubicación.
 - `AA`: área.
 
-Por ejemplo, `M-AA10-PCBOF` representa Maquinaria, Aire acondicionado, equipo 10
-de la empresa P, Bello Campo y Oficina Producción. Al guardar, el servidor vuelve
-a calcular el consecutivo dentro de un bloqueo para evitar que dos personas creen
-el mismo código simultáneamente.
+Por ejemplo, `M-AA22-PCBOF` representa Maquinaria, Aire acondicionado global 22,
+de la empresa P, Bello Campo y Oficina Producción. Además, `NUMERO_LOCAL_SEDE`
+guarda su posición dentro de esa sede; podría mostrarse como `Aire acondicionado
+#3`. Al guardar, el servidor vuelve a calcular ambos consecutivos dentro de un
+bloqueo para evitar colisiones.
+
+## Reemplazo de equipos
+
+El modo **Reemplazar equipo** solo ofrece equipos inhabilitados del mismo tipo,
+ubicación y área que aún no hayan sido reemplazados. El nuevo equipo recibe un ID
+y código global nuevos, pero conserva el número local del equipo anterior. La fila
+vieja no se elimina: queda con estado `REEMPLAZADO`, `ACTIVO = false` y una
+referencia al nuevo ID. El nuevo registro guarda el ID y código anteriores. Así los
+reportes históricos siguen asociados al equipo correcto.
+
+Antes de usar esta versión por primera vez se ejecuta una vez
+`prepararNumeracionesEquipos`, que agrega las columnas nuevas y completa la
+numeración de los registros existentes sin modificar sus códigos.
 
 ## Dar acceso a una persona
 

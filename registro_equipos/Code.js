@@ -19,6 +19,57 @@ function configurarAdministradorInicial() {
   return {configured: true, emails: email};
 }
 
+/** Agrega y completa las columnas de numeración sin cambiar códigos existentes. */
+function prepararNumeracionesEquipos() {
+  exigirAcceso_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sheet = obtenerHojaEquipos_();
+    let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0]
+      .map(normalizarEncabezado_);
+    const required = ['NUMERO_GLOBAL_TIPO','NUMERO_LOCAL_SEDE','REEMPLAZA_ID_EQUIPO','REEMPLAZADO_POR_ID_EQUIPO'];
+    const missing = required.filter(function(header) { return headers.indexOf(header) === -1; });
+    if (missing.length) {
+      sheet.getRange(1, sheet.getLastColumn() + 1, 1, missing.length).setValues([missing]);
+      headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0]
+        .map(normalizarEncabezado_);
+    }
+    if (sheet.getLastRow() < 2) return {ok: true, updated: 0};
+    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues();
+    const index = {};
+    headers.forEach(function(header, column) { index[header] = column; });
+    const localMax = {};
+    let updated = 0;
+    values.forEach(function(row) {
+      const code = texto_(row[index.CODIGO_EQUIPO]).toUpperCase();
+      const codeMatch = code.match(/^[A-Z]-[A-Z]{2}(\d{1,2})-/);
+      if (!Number(row[index.NUMERO_GLOBAL_TIPO]) && codeMatch) {
+        row[index.NUMERO_GLOBAL_TIPO] = Number(codeMatch[1]);
+        updated += 1;
+      }
+      const key = normalizar_(row[index.TIPO_EQUIPO]) + '|' + normalizar_(row[index.UBICACION]);
+      const nameMatch = texto_(row[index.NOMBRE]).match(/#\s*(\d+)\s*$/);
+      const existingLocal = Number(row[index.NUMERO_LOCAL_SEDE]) || (nameMatch ? Number(nameMatch[1]) : 0);
+      if (existingLocal) localMax[key] = Math.max(localMax[key] || 0, existingLocal);
+    });
+    values.forEach(function(row) {
+      if (Number(row[index.NUMERO_LOCAL_SEDE]) > 0) return;
+      const key = normalizar_(row[index.TIPO_EQUIPO]) + '|' + normalizar_(row[index.UBICACION]);
+      const nameMatch = texto_(row[index.NOMBRE]).match(/#\s*(\d+)\s*$/);
+      row[index.NUMERO_LOCAL_SEDE] = nameMatch ? Number(nameMatch[1]) : (localMax[key] || 0) + 1;
+      localMax[key] = Math.max(localMax[key] || 0, Number(row[index.NUMERO_LOCAL_SEDE]));
+      updated += 1;
+    });
+    sheet.getRange(2, 1, values.length, headers.length).setValues(values);
+    SpreadsheetApp.flush();
+    console.log(JSON.stringify({ok: true, rows: values.length, updated: updated, columnsAdded: missing}));
+    return {ok: true, rows: values.length, updated: updated, columnsAdded: missing};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function obtenerInicioRegistro() {
   const email = exigirAcceso_();
   const catalog = JSON.parse(JSON.stringify(EQUIPMENT_CATALOG));
@@ -36,7 +87,29 @@ function obtenerInicioRegistro() {
 function previsualizarCodigoEquipo(data) {
   exigirAcceso_();
   const validated = validarSeleccion_(data);
-  return construirSiguienteCodigo_(validated);
+  const plan = construirPlanNumeracion_(validated, data && data.replacementId);
+  return {
+    code: plan.code,
+    globalNumber: plan.globalNumber,
+    localNumber: plan.localNumber,
+    replacement: Boolean(plan.replaced)
+  };
+}
+
+function obtenerEquiposInhabilitadosCompatibles(data) {
+  exigirAcceso_();
+  const selected = validarSeleccion_(data);
+  return leerEquipos_().filter(function(item) {
+    return equipoInhabilitado_(item) && coincideReemplazo_(item, selected) &&
+      !texto_(item.REEMPLAZADO_POR_ID_EQUIPO);
+  }).map(function(item) {
+    return {
+      id: texto_(item.ID_EQUIPO),
+      code: texto_(item.CODIGO_EQUIPO),
+      name: texto_(item.NOMBRE),
+      localNumber: numeroLocalEquipo_(item)
+    };
+  }).sort(function(a, b) { return a.localNumber - b.localNumber; });
 }
 
 function registrarEquipo(data) {
@@ -45,19 +118,22 @@ function registrarEquipo(data) {
   lock.waitLock(30000);
   try {
     const validated = validarEquipo_(data);
-    const code = construirSiguienteCodigo_(validated);
+    const plan = construirPlanNumeracion_(validated, data && data.replacementId);
+    const code = plan.code;
     const sheet = obtenerHojaEquipos_();
     asegurarEstructura_(sheet);
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0]
       .map(normalizarEncabezado_);
     const now = new Date();
+    const newId = 'EQ-' + Utilities.getUuid();
+    const displayName = construirNombreLocal_(validated.name, validated.type.name, plan.localNumber);
     const reportUrl = REGISTRO_CONFIG.REPORT_APP_URL + '?equipo=' + encodeURIComponent(code);
     const record = {
-      ID_EQUIPO: 'EQ-' + Utilities.getUuid(),
+      ID_EQUIPO: newId,
       CODIGO_EQUIPO: code,
       TIPO_EQUIPO: validated.type.name,
       NOMBRE_ORIGINAL: validated.name,
-      NOMBRE: validated.name,
+      NOMBRE: displayName,
       MARCA: validated.brand,
       MODELO: validated.model,
       INFORMACION: validated.information,
@@ -65,7 +141,11 @@ function registrarEquipo(data) {
       UBICACION: validated.location.name,
       AREA: validated.area.name,
       ESTATUS: 'ACTIVO',
-      CODIGO_ANTERIOR: '',
+      NUMERO_GLOBAL_TIPO: plan.globalNumber,
+      NUMERO_LOCAL_SEDE: plan.localNumber,
+      REEMPLAZA_ID_EQUIPO: plan.replaced ? texto_(plan.replaced.ID_EQUIPO) : '',
+      REEMPLAZADO_POR_ID_EQUIPO: '',
+      CODIGO_ANTERIOR: plan.replaced ? texto_(plan.replaced.CODIGO_EQUIPO) : '',
       IMAGEN_URL: validated.imageUrl,
       QR_LEGACY_URL: '',
       ACTIVO: true,
@@ -75,8 +155,11 @@ function registrarEquipo(data) {
     sheet.appendRow(headers.map(function(header) {
       return record[header] === undefined ? '' : record[header];
     }));
+    if (plan.replaced) marcarEquipoReemplazado_(sheet, headers, plan.replaced, newId, now);
     console.log(JSON.stringify({action: 'EQUIPMENT_CREATED', code: code, user: email}));
-    return {ok: true, code: code, reportUrl: reportUrl, name: validated.name};
+    return {ok: true, code: code, reportUrl: reportUrl, name: displayName,
+      globalNumber: plan.globalNumber, localNumber: plan.localNumber,
+      replacedCode: plan.replaced ? texto_(plan.replaced.CODIGO_EQUIPO) : ''};
   } finally {
     lock.releaseLock();
   }
@@ -123,20 +206,41 @@ function validarEquipo_(data) {
 }
 
 function construirSiguienteCodigo_(selected) {
-  const companyCode = selected.company.code;
-  const used = obtenerCodigos_();
+  return construirPlanNumeracion_(selected, '').code;
+}
+
+function construirPlanNumeracion_(selected, replacementId) {
+  const equipment = leerEquipos_();
+  const used = equipment.map(function(item) { return texto_(item.CODIGO_EQUIPO).toUpperCase(); });
   let max = 0;
   used.forEach(function(code) {
     const match = code.match(/^[A-Z]-[A-Z]{2}(\d{1,2})-([A-Z])[A-Z0-9]{4}$/);
-    if (match && match[2] === companyCode) max = Math.max(max, Number(match[1]));
+    if (match && code.slice(0, 4) === selected.category.code + '-' + selected.type.code) {
+      max = Math.max(max, Number(match[1]));
+    }
   });
-  const next = max + 1;
-  if (next > 99) throw new Error('La empresa ' + selected.company.name + ' agotó la numeración de dos dígitos.');
-  const sequence = String(next).padStart(2, '0');
+  const globalNumber = max + 1;
+  if (globalNumber > 99) throw new Error('El tipo ' + selected.type.name + ' agotó la numeración global de dos dígitos.');
+  let replaced = null;
+  if (replacementId) {
+    replaced = equipment.find(function(item) { return texto_(item.ID_EQUIPO) === texto_(replacementId); });
+    if (!replaced || !equipoInhabilitado_(replaced) || !coincideReemplazo_(replaced, selected) ||
+        texto_(replaced.REEMPLAZADO_POR_ID_EQUIPO)) {
+      throw new Error('El equipo seleccionado ya no está disponible para reemplazo o no coincide con tipo, sede y área.');
+    }
+  }
+  let localNumber = replaced ? numeroLocalEquipo_(replaced) : 0;
+  if (!localNumber) {
+    equipment.forEach(function(item) {
+      if (coincideTipoYSede_(item, selected)) localNumber = Math.max(localNumber, numeroLocalEquipo_(item));
+    });
+    localNumber += 1;
+  }
+  const sequence = String(globalNumber).padStart(2, '0');
   const code = selected.category.code + '-' + selected.type.code + sequence + '-' +
-    companyCode + selected.location.code + selected.area.code;
+    selected.company.code + selected.location.code + selected.area.code;
   if (used.indexOf(code) !== -1) throw new Error('El código generado ya existe: ' + code);
-  return code;
+  return {code: code, globalNumber: globalNumber, localNumber: localNumber, replaced: replaced};
 }
 
 function obtenerCodigos_() {
@@ -149,6 +253,63 @@ function obtenerCodigos_() {
   return sheet.getRange(2, index + 1, sheet.getLastRow() - 1, 1).getDisplayValues()
     .map(function(row) { return String(row[0] || '').trim().toUpperCase(); }).filter(Boolean);
 }
+
+function leerEquipos_() {
+  const sheet = obtenerHojaEquipos_();
+  if (sheet.getLastRow() < 2) return [];
+  const values = sheet.getDataRange().getValues();
+  const headers = values.shift().map(normalizarEncabezado_);
+  return values.map(function(row, index) {
+    const item = {_ROW: index + 2};
+    headers.forEach(function(header, column) { item[header] = row[column]; });
+    return item;
+  });
+}
+
+function equipoInhabilitado_(item) {
+  const status = texto_(item.ESTATUS).toUpperCase();
+  return item.ACTIVO === false || ['INHABILITADO','DESCONTINUADO','FUERA DE SERVICIO'].indexOf(status) !== -1;
+}
+
+function coincideTipoYSede_(item, selected) {
+  return normalizar_(item.TIPO_EQUIPO) === normalizar_(selected.type.name) &&
+    normalizar_(item.UBICACION) === normalizar_(selected.location.name);
+}
+
+function coincideReemplazo_(item, selected) {
+  return coincideTipoYSede_(item, selected) && normalizar_(item.AREA) === normalizar_(selected.area.name);
+}
+
+function numeroLocalEquipo_(item) {
+  const stored = Number(item.NUMERO_LOCAL_SEDE);
+  if (stored > 0) return stored;
+  const match = texto_(item.NOMBRE).match(/#\s*(\d+)\s*$/);
+  return match ? Number(match[1]) : 0;
+}
+
+function construirNombreLocal_(name, typeName, localNumber) {
+  const base = texto_(name || typeName).replace(/\s*#\s*\d+\s*$/, '').trim() || typeName;
+  return base + ' #' + localNumber;
+}
+
+function marcarEquipoReemplazado_(sheet, headers, oldEquipment, newId, now) {
+  const values = {
+    ACTIVO: false,
+    ESTATUS: 'REEMPLAZADO',
+    REEMPLAZADO_POR_ID_EQUIPO: newId,
+    ACTUALIZADO_EN: now
+  };
+  Object.keys(values).forEach(function(header) {
+    const column = headers.indexOf(header);
+    if (column !== -1) sheet.getRange(oldEquipment._ROW, column + 1).setValue(values[header]);
+  });
+}
+
+function normalizar_(value) {
+  return texto_(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+}
+
+function texto_(value) { return String(value === undefined || value === null ? '' : value).trim(); }
 
 function obtenerHojaEquipos_() {
   const spreadsheet = SpreadsheetApp.openById(REGISTRO_CONFIG.SPREADSHEET_ID);

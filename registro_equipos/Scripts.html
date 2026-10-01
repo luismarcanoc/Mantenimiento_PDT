@@ -1,7 +1,7 @@
 <script>
 (() => {
   'use strict';
-  const state = {catalog:null, previewVersion:0, saving:false};
+  const state = {catalog:null, previewVersion:0, replacementVersion:0, saving:false};
   const $ = id => document.getElementById(id);
   const fields = ['category','type','company','location','area'];
   function server(name, ...args) {
@@ -16,20 +16,36 @@
   function payload() {
     return {categoryCode:$('category').value,typeCode:$('type').value,companyCode:$('company').value,
       locationCode:$('location').value,areaCode:$('area').value,name:$('name').value,
-      brand:$('brand').value,model:$('model').value,information:$('information').value,imageUrl:$('image-url').value};
+      brand:$('brand').value,model:$('model').value,information:$('information').value,imageUrl:$('image-url').value,
+      replacementId: mode()==='replacement' ? $('replacement').value : ''};
   }
+  function mode(){ const selected=document.querySelector('input[name="mode"]:checked'); return selected?selected.value:'new'; }
   function updateTypes() {
     $('type').innerHTML=options(state.catalog.types[$('category').value]||[],'Selecciona el tipo');
-    schedulePreview();
+    scheduleReplacementLoad(); schedulePreview();
   }
   async function preview() {
     const data=payload(); const version=++state.previewVersion;
-    if (fields.some(id => !$(id).value)) { $('code-preview').textContent='Completa la clasificación'; return; }
+    if (fields.some(id => !$(id).value)) { $('code-preview').textContent='Completa la clasificación'; $('number-preview').textContent='El consecutivo se confirma nuevamente al guardar.'; return; }
+    if (mode()==='replacement' && !$('replacement').value) { $('code-preview').textContent='Selecciona el equipo inhabilitado'; $('number-preview').textContent='El reemplazo debe coincidir con tipo, sede y área.'; return; }
     $('code-preview').textContent='Calculando…';
-    try { const code=await server('previsualizarCodigoEquipo',data); if(version===state.previewVersion)$('code-preview').textContent=code; }
+    try { const result=await server('previsualizarCodigoEquipo',data); if(version===state.previewVersion){ $('code-preview').textContent=result.code; $('number-preview').textContent='Global #'+result.globalNumber+' · En esta sede #'+result.localNumber+(result.replacement?' · número local reutilizado':''); } }
     catch(error){ if(version===state.previewVersion)$('code-preview').textContent=error.message; }
   }
   function schedulePreview(){ state.previewVersion+=1; window.clearTimeout(state.previewTimer); state.previewTimer=window.setTimeout(preview,180); }
+  function scheduleReplacementLoad(){ state.replacementVersion+=1; window.clearTimeout(state.replacementTimer); state.replacementTimer=window.setTimeout(loadReplacements,180); }
+  async function loadReplacements(){
+    const version=++state.replacementVersion; const select=$('replacement');
+    if(mode()!=='replacement'){ $('replacement-wrap').hidden=true; select.innerHTML='<option value="">No aplica</option>'; return; }
+    $('replacement-wrap').hidden=false;
+    if(fields.some(id=>!$(id).value)){ select.innerHTML='<option value="">Completa tipo, ubicación y área</option>'; schedulePreview(); return; }
+    select.disabled=true; select.innerHTML='<option value="">Buscando equipos compatibles…</option>';
+    try { const items=await server('obtenerEquiposInhabilitadosCompatibles',payload()); if(version!==state.replacementVersion)return;
+      select.innerHTML='<option value="">Selecciona un equipo</option>'+items.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)} · ${escapeHtml(item.code)}</option>`).join('');
+      if(!items.length) select.innerHTML='<option value="">No hay equipos compatibles disponibles</option>';
+    } catch(error){ if(version===state.replacementVersion)select.innerHTML=`<option value="">${escapeHtml(error.message)}</option>`; }
+    finally { if(version===state.replacementVersion){select.disabled=false;schedulePreview();} }
+  }
   async function init(){
     try {
       const result=await server('obtenerInicioRegistro'); state.catalog=result.catalog; $('user-email').textContent=result.email;
@@ -40,16 +56,18 @@
       $('loading').hidden=true; $('equipment-form').hidden=false;
     } catch(error){ $('loading').hidden=true; $('denied-message').textContent=error.message; $('denied').hidden=false; }
   }
-  $('category').addEventListener('change',updateTypes); ['type','company','location','area'].forEach(id=>$(id).addEventListener('change',schedulePreview));
+  $('category').addEventListener('change',updateTypes); ['type','company','location','area'].forEach(id=>$(id).addEventListener('change',()=>{scheduleReplacementLoad();schedulePreview();}));
+  document.querySelectorAll('input[name="mode"]').forEach(input=>input.addEventListener('change',()=>{scheduleReplacementLoad();schedulePreview();}));
+  $('replacement').addEventListener('change',schedulePreview);
   $('equipment-form').addEventListener('submit',async event=>{
     event.preventDefault(); if(state.saving)return; $('form-message').textContent='';
     if(!event.currentTarget.reportValidity())return; state.saving=true; $('submit').disabled=true; $('submit').textContent='Guardando…';
     try { const result=await server('registrarEquipo',payload()); $('equipment-form').hidden=true; $('success-name').textContent=result.name;
-      $('final-code').textContent=result.code; $('report-link').href=result.reportUrl; $('success').hidden=false; window.scrollTo({top:0,behavior:'smooth'});
+      $('final-code').textContent=result.code+' · Global #'+result.globalNumber+' · Sede #'+result.localNumber; $('report-link').href=result.reportUrl; $('success').hidden=false; window.scrollTo({top:0,behavior:'smooth'});
     } catch(error){ $('form-message').textContent=error.message; }
     finally { state.saving=false; $('submit').disabled=false; $('submit').textContent='Registrar equipo'; }
   });
-  $('another').addEventListener('click',()=>{ $('equipment-form').reset(); $('success').hidden=true; $('equipment-form').hidden=false; updateTypes(); $('category').focus(); });
+  $('another').addEventListener('click',()=>{ $('equipment-form').reset(); $('success').hidden=true; $('equipment-form').hidden=false; updateTypes(); scheduleReplacementLoad(); $('category').focus(); });
   init();
 })();
 </script>

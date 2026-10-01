@@ -11,6 +11,11 @@
     <section id="denied" class="panel error" hidden><h2>Acceso no disponible</h2><p id="denied-message"></p></section>
     <form id="equipment-form" class="panel" hidden novalidate>
       <div class="user-line">Cuenta autorizada: <strong id="user-email"></strong></div>
+      <h2>Tipo de registro</h2>
+      <div class="mode-grid">
+        <label class="mode"><input type="radio" name="mode" value="new" checked><span><strong>Equipo nuevo</strong><small>Asigna números global y local nuevos.</small></span></label>
+        <label class="mode"><input type="radio" name="mode" value="replacement"><span><strong>Reemplazar equipo</strong><small>Conserva el número local del equipo inhabilitado.</small></span></label>
+      </div>
       <h2>Clasificación y ubicación</h2>
       <div class="grid">
         <label>Categoría<select id="category" required></select></label>
@@ -19,10 +24,15 @@
         <label>Ubicación<select id="location" required></select></label>
         <label>Área<select id="area" required></select></label>
       </div>
-      <div class="preview"><span>Código que se asignará</span><strong id="code-preview">Completa la clasificación</strong><small>El consecutivo se confirma nuevamente al guardar.</small></div>
+      <div id="replacement-wrap" hidden>
+        <label>Equipo inhabilitado que será reemplazado<select id="replacement"><option value="">Completa tipo, ubicación y área</option></select></label>
+        <p class="hint">Solo aparecen equipos inhabilitados del mismo tipo, sede y área que todavía no hayan sido reemplazados.</p>
+      </div>
+      <div class="preview"><span>Código que se asignará</span><strong id="code-preview">Completa la clasificación</strong>
+        <small id="number-preview">El consecutivo se confirma nuevamente al guardar.</small></div>
       <h2>Datos del equipo</h2>
       <div class="grid">
-        <label class="wide">Nombre del equipo<input id="name" maxlength="160" required placeholder="Ej. Aire acondicionado #2"></label>
+        <label class="wide">Nombre o descripción base<input id="name" maxlength="160" required placeholder="Ej. Aire acondicionado"><small>El sistema agregará automáticamente el número local de la sede.</small></label>
         <label>Marca<input id="brand" maxlength="120" placeholder="Opcional"></label>
         <label>Modelo<input id="model" maxlength="120" placeholder="Opcional"></label>
         <label class="wide">Información adicional<textarea id="information" maxlength="500" rows="3" placeholder="Ej. Atiende la máquina de hielo"></textarea></label>
